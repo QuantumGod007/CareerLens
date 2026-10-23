@@ -1,5 +1,7 @@
 # Phase 1 execution report
 
+Historical results from the end of Phase 1, before the backend and website were implemented. The requirements and limitations below describe that checkpoint. See the [current contract status](../contracts/implementation-status.md) for later implementation, including the reconstructed contracts.
+
 The checks below ran on 23 October 2026, India Standard Time, on local macOS ARM64. Phase 1 tooling is ready for review; Phase 2 has not started.
 
 | Check | Status | Actual evidence |
@@ -26,4 +28,21 @@ One controlled-form run initially failed because its dropdown's implicit label i
 
 The next phase can build API/persistence/worker foundations after reviewing these results and resolving the contract/dry-run lifecycle decisions. Durable approval, duplicate prevention, restart recovery, candidate provenance and employer receipt verification remain unimplemented.
 
-Work is isolated on `codex/phase-1-feasibility`. See `git-handoff.md` for the commit/push record once verification finishes. No product frontend, production schema or Phase 2 implementation is included.
+Work is isolated on `codex/phase-1-feasibility`. See the [delivery record](#delivery-record) for the verified commit and push details. No product frontend, production schema or Phase 2 implementation is included.
+
+## Delivery record
+
+Historical publication notes, preserved from the original handoff. PR status and next-phase statements below describe that checkpoint, not the current repository. Both PRs were subsequently merged; see the current [README](../../README.md).
+
+Recorded 23 October 2026, India Standard Time.
+
+- Repository: [QuantumGod007/CareerLens](https://github.com/QuantumGod007/CareerLens).
+- Branch: `codex/phase-1-feasibility`; original `main` history preserved.
+- Implementation/evidence commit: `81756a1765e09f6daa7c4cf7586c46962df0c1d7`.
+- Push: succeeded; GitHub's branch-ref response independently matched that commit.
+- Review: [draft pull request 1](https://github.com/QuantumGod007/CareerLens/pull/1); not merged.
+- Deliverables: environment/secret checks, live discovery and form-inspection probes, Groq/PDF/controlled-form probes, 41 offline tests, pinned dependencies, placeholder configuration and feasibility reports.
+- Staged-file and reachable-history credential scan: PASS, no violations. `.env` is ignored and untracked; its local mode is 0600. No credential values are included in reports.
+- Excluded from the push: populated `.env`, virtual environment, browser downloads, synthetic PDF outputs, screenshots and raw local reports under `data/`.
+
+This handoff note is saved in a separate documentation commit following the verified implementation push. Phase 2 has not started. No employer application was submitted, and the draft PR remains available for review.

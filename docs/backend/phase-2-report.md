@@ -1,5 +1,7 @@
 # Phase 2 execution report
 
+Historical results from the end of Phase 2, before the web interface. The recorded test results and technical limitations are preserved; see the [operation guide](README.md) and [current contract status](../contracts/implementation-status.md) for later changes.
+
 Executed 23 October 2026, India Standard Time. Phase 2 backend foundation is implemented and tested. Phase 3 has not started. No employer application, CAPTCHA action, AI resume processing or UI was implemented or executed.
 
 ## Baseline and environment
@@ -60,10 +62,27 @@ Protected routes require a private persistent local token. Host/origin/cross-sit
 
 The full suite has 84 tests: 41 existing Phase 1 regressions and 43 backend checks. All passed, with zero failures/errors/skips. No automated check is blocked or depends on paid/live employer services. One Starlette TestClient deprecation warning remains; no dependency replacement was needed. JUnit is retained locally under `data/backend/phase2-tests.xml`. The separate live source demonstration also passed.
 
-## Handoff, limitations and next phase
+## Delivery and limitations at this checkpoint
 
-The branch is pushed for draft review; exact commits/PR status are recorded in [the Git handoff](git-handoff.md). It is not merged automatically. Populated `.env`, local tokens, databases, browser state and raw artifacts are excluded from Git. Index/history scanning runs before publication without printing credentials.
+The branch is pushed for draft review; exact commits/PR status are recorded in [the delivery record](#delivery-record). It is not merged automatically. Populated `.env`, local tokens, databases, browser state and raw artifacts are excluded from Git. Index/history scanning runs before publication without printing credentials.
 
 Limitations: one local user/source/worker; no production auth, cloud hosting, full candidate services, AI resume pipeline, application form adapter, CAPTCHA handling or employer submission. Approval/reconciliation tests exercise domain guards, not complete real form/receipt semantics. Final orphan-file reconciliation after a file/DB crash is pending; only aged temporary writes are cleaned. Native Windows/Linux runtime validation is pending. Live listings and quota availability can change.
 
-A temporary vanilla interface could immediately connect to health, board refresh, stored listings, task/events and authorized artifacts. Resume upload, matching, enhancement and application screens require later backend services. Frontend work remains deferred under the backend-first decision. Stop here for Phase 2 review; do not begin Phase 3 automatically.
+A temporary vanilla interface could immediately connect to health, board refresh, stored listings, task/events and authorized artifacts. Resume upload, matching, enhancement and application screens require later backend services. At this checkpoint, frontend work was deferred under the backend-first decision until Phase 2 review. Phase 3 subsequently delivered the local web interface; the resume and application services still require later implementation.
+
+## Delivery record
+
+Historical publication notes, preserved from the original handoff. PR status and next-phase statements below describe that checkpoint, not the current repository. Both PRs were subsequently merged; see the current [README](../../README.md).
+
+Recorded 23 October 2026, India Standard Time.
+
+- Baseline: merged Phase 1 on `main`, commit `9eadb15f87a753511f3a62014d6c333084d20f45`.
+- Branch: `codex/phase-2-backend-foundation`.
+- Backend/test/report implementation commit: `866bda17ad58ba54f450beea392929fcd52c5d0d`.
+- Push succeeded and established the branch upstream. No force push or branch deletion occurred.
+- [Draft pull request 2](https://github.com/QuantumGod007/CareerLens/pull/2) targets `main`. It remains unmerged.
+- Verification: 84 tests passed (41 original, 43 backend), no failures/errors/skips; live source API/worker/persistence and restart checks passed. One TestClient deprecation warning is documented.
+- Credential scan: staged files and reachable history passed before publication, including checks for configured Groq and local-session credentials. No credential values were printed.
+- Excluded from Git: populated `.env`, local session file, SQLite/WAL files, PDFs, browser state, private raw reports and virtual environment.
+
+This handoff note is recorded in a separate documentation commit after the verified backend push and PR creation. Services were stopped cleanly after the demonstrations. Phase 3 has not started.

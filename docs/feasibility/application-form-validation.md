@@ -22,4 +22,4 @@ Recommendation: retain this as a form-preparation candidate, with a visible manu
 
 Separately, the network-disabled local fixture passed text/dropdown/checkbox entry, synthetic PDF attachment, required-answer detection, a pause before final action and one local DOM receipt. The initial dropdown-label failure was fixed and rerun successfully. This is browser feasibility evidence, not employer submission or durable consent/duplicate protection.
 
-Local evidence: `data/feasibility/application-form.json`, `employer-form.png`, `controlled-form.json` and `controlled-form-ready.png`. Run the PDF probe before the controlled-form probe. Commands are in the README.
+Local evidence: `data/feasibility/application-form.json`, `employer-form.png`, `controlled-form.json` and `controlled-form-ready.png`. Run the PDF probe before the controlled-form probe. Commands are in the [operation guide](../backend/README.md#tests-and-diagnostics).

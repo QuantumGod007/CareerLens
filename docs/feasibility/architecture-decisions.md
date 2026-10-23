@@ -1,5 +1,7 @@
 # Architecture decisions after Phase 1
 
+Historical decision record. “Still unimplemented” and proposed changes describe the Phase 1 checkpoint. Later backend and browser work is tracked in [contract status](../contracts/implementation-status.md); the rationale and remaining product requirements here are retained.
+
 Evidence supports continuing with the proposed local modular backend. Import/connection probes do not establish implemented production guarantees.
 
 | Area | Decision | Still unimplemented |

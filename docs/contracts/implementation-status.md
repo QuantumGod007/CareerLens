@@ -26,6 +26,19 @@ UUIDs and UTC timestamps are serialized explicitly. Unknown values remain null. 
 
 The following document-04 endpoints remain planned and are deliberately absent from the running OpenAPI: profile upload/read/correction/confirmation, searches/read/role decisions, application creation/list/detail, answers/resume/approval/cancel/reconcile. No application-submission route or handler exists.
 
+## Original product specifications
+
+The six original Word documents remain external in `CareerLens_Documentation/`. They define the product vision and requirements. This status page distinguishes implemented routes from future contract definitions; neither replaces the originals:
+
+- `01_PRD.docx` — product requirements.
+- `02_SRS.docx` — software requirements.
+- `03_Architecture_and_UML.docx` — architecture and UML.
+- `04_API_and_AI_Specifications.docx` — API and AI specifications.
+- `05_Tech_Stack_and_Setup.docx` — technology choices and setup.
+- `06_Saturday_Implementation_Plan.docx` — original implementation plan.
+
+Their absence from Git does not make them obsolete. Historical validation and implementation results are retained in the [Phase 1 report](../feasibility/README.md) and [Phase 2 report](../backend/phase-2-report.md).
+
 ## Contract changes and unresolved requirements
 
 - One canonical Application owns multiple PreparationRuns. A terminal dry run does not block a later explicit review run. Possible live sends remain an irreversible application-level barrier.

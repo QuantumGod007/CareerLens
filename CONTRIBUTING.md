@@ -1,31 +1,19 @@
-# Contributing to CareerLens
+# Development
 
-Phase 1 feasibility tools, the Phase 2 backend and Phase 3 local website are implemented. Full resume/application services are pending. CareerLens currently has one owner; keep changes focused and easy to run locally.
+CareerLens currently has one maintainer. Keep changes focused, preserve existing requirements and working behavior, and keep documentation consistent with what runs. Follow the requested Git workflow; PRs and formal handoffs are optional. Make meaningful commits and push normally without force-pushing or rewriting unrelated history.
 
-## Development workflow
+Use the [README](README.md) for setup and `python -m app.dev` for local development. Before committing, review the complete diff and run:
 
-1. Start from the latest `main` on a descriptive branch, normally `codex/<change>` for agent work.
-2. Preserve existing code, tests and useful documentation. Implement and test the complete change.
-3. Check the staged diff and credentials, make meaningful commits and push verified work.
-4. Keep the README consistent with what runs. PRs and review are optional when useful; no formal handoff or draft PR is required for every phase. Do not force-push or overwrite unrelated work.
+```bash
+.venv/bin/python -m pytest -q
+# After staging the intended files:
+.venv/bin/python -m scripts.feasibility.check_repository_safety
+```
 
-## Candidate facts and application approval
+After intentional API/schema changes, regenerate contracts with `python -m app.tools.export_contracts`. Describe tests honestly: distinguish fixtures from live integrations. Normal tests use isolated databases and synthetic/mocked data, including worker crash recovery; they do not call employers or Groq. Live probes are opt-in, and a Groq call requires confirmation that the organization has no paid billing. See [validation details](docs/backend/README.md#tests-and-diagnostics).
 
-- Generated resume claims must be supported by confirmed candidate facts.
-- Missing required answers must be requested from the candidate.
-- Any change to the reviewed resume or answers requires fresh approval.
-- Tests and rehearsals should use synthetic data and a controlled application receiver.
-- A real employer application requires the candidate's explicit approval for that exact application.
-- Report uncertain submission outcomes honestly and do not retry a possible submission automatically.
+Never commit populated `.env` files, credentials, session tokens, resumes, answers, databases, browser state, private screenshots/traces or generated local outputs. Use placeholders and synthetic fixtures; check the staged diff as well as credential-scan results.
 
-## Public repository hygiene
+Keep the product’s safety rules intact: use confirmed facts for generated claims, ask for missing answers, and bind approval to the exact application payload. Changed resumes or answers need fresh approval. Test browser preparation against a controlled receiver. Never retry an uncertain possible submission automatically.
 
-Do not commit credentials, `.env` files, personal resumes, application answers, local databases, browser cookies, saved sessions or private screenshots and traces. Use placeholders in configuration examples and synthetic records in fixtures. Review the staged diff before committing.
-
-## Validation
-
-Run `.venv/bin/python -m pytest -q` for offline checks and the relevant smoke commands in the README. After staging intended files, run `.venv/bin/python -m scripts.feasibility.check_repository_safety` before committing or pushing. Live Groq tests require confirmation that the organization has no paid billing. Default tests never call Groq or load your key. Distinguish live, controlled-browser and mocked results in pull requests.
-
-Use the API/worker commands in `docs/backend/README.md`. Normal tests use isolated databases and synthetic/mocked data, including a child-process crash test; they do not contact employers or Groq. Real source-refresh demonstrations are explicitly invoked separately. Regenerate contracts with `python -m app.tools.export_contracts` after intentional endpoint/schema changes.
-
-Start locally with `python -m app.dev`. Stop after the requested phase; do not start another phase or merge branches automatically.
+Preserve technical evidence and architecture decisions. Consolidate duplicates only when every unique detail remains accessible. Stay within the requested scope; do not begin the next phase or merge unrelated work automatically.
