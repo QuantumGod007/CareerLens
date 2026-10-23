@@ -9,6 +9,10 @@ class StrictCommand(BaseModel):
     model_config = ConfigDict(extra="forbid", strict=True)
 
 
+class BrowserSessionView(BaseModel):
+    connected: bool
+
+
 class RefreshCommand(StrictCommand):
     expected_revision: int | None = Field(default=None, ge=1)
 

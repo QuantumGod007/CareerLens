@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#5550cf">
+  <meta name="description" content="Your local CareerLens workspace. Discover real job listings and follow source refreshes.">
+  <title>CareerLens · Your next chapter</title>
+  <link rel="icon" href="/web/lens.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/web/css/app.css">
+  <script type="module" src="/web/js/main.js"></script>
+</head>
+<body>
+<a class="skip" href="#main">Skip to content</a>
+<aside class="sidebar" aria-label="Workspace navigation">
+  <a class="brand" href="#overview"><img src="/web/lens.svg" width="36" height="36" alt=""><span>CareerLens<span class="brand-dot">.</span></span></a>
+  <p class="nav-label">YOUR WORKSPACE</p>
+  <nav aria-label="Main navigation">
+    <a href="#overview" data-view="overview"><span class="nav-icon" aria-hidden="true">◫</span>Overview</a>
+    <a href="#explore" data-view="explore"><span class="nav-icon" aria-hidden="true">⌕</span>Explore jobs<span id="nav-count" class="nav-count"></span></a>
+    <a href="#activity" data-view="activity"><span class="nav-icon" aria-hidden="true">≋</span>Activity</a>
+  </nav>
+  <div class="planned"><p class="nav-label">ON THE HORIZON</p><p>Resume Studio <span class="soon">Soon</span></p><p>Applications <span class="soon">Soon</span></p></div>
+  <div class="sidebar-bottom"><span class="local-mark" aria-hidden="true">⌘</span><strong>Your machine. Your workspace.</strong><p>Runs locally. Your credentials stay private.</p><span class="phase-tag">PHASE 03 · DISCOVER</span></div>
+</aside>
+<div class="workspace">
+  <header class="topbar"><span class="breadcrumb">Workspace <span aria-hidden="true">/</span> <strong id="breadcrumb">Overview</strong></span><div class="connection"><span id="connection" class="pill neutral">Connecting…</span><button id="session-button" class="text-button" type="button" disabled>Connect</button></div></header>
+  <main id="main" tabindex="-1">
+    <div id="notice" class="notice" role="status" hidden><span id="notice-text"></span><button id="notice-retry" class="text-button" type="button" hidden>Try again</button></div>
+    <section id="overview" aria-labelledby="overview-title">
+      <div class="page-heading"><div><p class="eyebrow">A LITTLE CLARITY. A NEW POSSIBILITY.</p><h1 id="overview-title" tabindex="-1">Your next chapter,<br><span>in clearer focus.</span></h1><p class="intro">Find the opportunities worth a closer look.<br class="desktop-break"> Start with real listings, straight from the source.</p><a href="#explore" class="button primary">Explore opportunities <span aria-hidden="true">↗</span></a></div><div class="focus-card"><span class="eyebrow">THE STARTING POINT</span><div class="orbit" aria-hidden="true"><div class="orbit-inner"><img src="/web/lens.svg" width="56" height="56" alt=""></div><span class="orbit-point"></span></div><strong>Good opportunities.<br>Clearer decisions.</strong><p>One focused workspace for what comes next.</p></div></div>
+      <div class="section-heading"><h2>Your workspace at a glance</h2><span id="version" class="muted">Checking system…</span></div>
+      <div id="system-status" class="status-grid" aria-live="polite"></div>
+      <div class="overview-grid"><section class="panel"><div class="panel-heading"><h2>Connected source</h2><span class="tag">Official feed</span></div><div id="source-summary" aria-live="polite"><p class="muted">Loading your job source…</p></div></section><section class="panel"><div class="panel-heading"><h2>Latest activity</h2><a href="#activity" class="small-link">View activity <span aria-hidden="true">↗</span></a></div><div id="recent-activity"><div class="empty compact"><span class="empty-symbol" aria-hidden="true">≋</span><h3>A fresh start</h3><p>Refresh a source to follow its progress here.</p></div></div></section></div>
+      <div class="roadmap"><span class="roadmap-symbol" aria-hidden="true">✧</span><div><strong>A little more clarity, one step at a time.</strong><p>Resume Studio and reviewed applications are coming later. Today, discover and explore.</p></div><span class="tag">Building thoughtfully</span></div>
+    </section>
+    <section id="explore" aria-labelledby="explore-title" hidden>
+      <div class="section-heading page-title"><div><p class="eyebrow">FIND YOUR NEXT POSSIBILITY</p><h1 id="explore-title" tabindex="-1">Explore jobs<span class="brand-dot">.</span></h1><p class="intro">Real opportunities. A clearer place to start.</p></div><button class="button primary refresh-button" type="button" disabled>Refresh listings <span aria-hidden="true">↻</span></button></div>
+      <div class="source-toolbar"><label for="source-select">Job source</label><select id="source-select" disabled><option>Loading sources…</option></select><span id="source-state" class="muted">Checking source…</span></div>
+      <div class="filter-panel"><div class="search-field"><label for="job-search">Search loaded listings</label><input id="job-search" type="search" placeholder="Job title, company or keyword" autocomplete="off"></div><div><label for="type-filter">Employment type</label><select id="type-filter"><option value="">All types</option></select></div><div><label for="location-filter">Location</label><select id="location-filter"><option value="">All locations</option></select></div><button id="clear-filters" class="text-button" type="button">Clear filters</button></div>
+      <p class="filter-note">Filters apply to loaded listings, not AI matching. Load more to search a larger set.</p>
+      <div class="section-heading results-heading"><h2 id="results-count" aria-live="polite">Loading listings…</h2><span id="retrieval-time" class="muted"></span></div>
+      <p id="jobs-warning" class="inline-warning" role="status" hidden></p>
+      <div id="job-list" class="job-grid" aria-busy="true"></div>
+      <div class="load-row"><button id="load-more" class="button secondary" type="button" hidden>Load more listings</button><button id="retry-jobs" class="button secondary" type="button" hidden>Retry loading listings</button></div>
+      <p class="storage-note">Stored listings are a snapshot. Check the employer website for current availability.</p>
+    </section>
+    <section id="activity" aria-labelledby="activity-title" hidden>
+      <div class="page-title"><p class="eyebrow">A CLEAR VIEW OF WHAT’S HAPPENING</p><h1 id="activity-title" tabindex="-1">Workspace activity<span class="brand-dot">.</span></h1><p class="intro">Real tasks, real progress. Nothing running behind the curtain.</p></div>
+      <div class="activity-layout"><section class="panel"><div class="panel-heading"><h2>Known tasks</h2><span class="tag">This page session</span></div><p class="muted">Tasks started or looked up here. Reloading clears this list; persisted tasks remain in the backend.</p><form id="task-lookup"><label for="task-id">Look up a task ID</label><div class="input-row"><input id="task-id" required placeholder="Task UUID" spellcheck="false" autocomplete="off"><button class="button secondary" type="submit">Look up</button></div></form><div id="task-list" aria-live="polite"></div></section><section class="panel"><div class="panel-heading"><h2>Task details</h2><button id="check-task" class="text-button" type="button" hidden>Check status</button></div><div id="task-detail" aria-live="polite"><div class="empty compact"><h3>Everything has a starting point</h3><p>Refresh listings or look up a known task to see its progress and event history.</p></div></div></section></div>
+    </section>
+    <footer>CAREERLENS <span aria-hidden="true">/</span> A clearer path forward.<span class="footer-local">Local workspace · No automatic applications</span></footer>
+  </main>
+</div>
+<dialog id="job-dialog" aria-labelledby="dialog-title"><div class="dialog-top"><span class="eyebrow">OPPORTUNITY DETAILS</span><button id="close-dialog" class="icon-button" type="button" aria-label="Close job details">×</button></div><div id="job-detail"></div></dialog>
+</body>
+</html>

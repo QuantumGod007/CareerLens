@@ -5,11 +5,14 @@ from uuid import UUID, uuid4
 
 from fastapi import FastAPI, Request
 from fastapi.responses import JSONResponse
+from fastapi.responses import FileResponse
+from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app import __version__
-from app.api import health, tasks, sources, artifacts
-from app.core.config import Settings, identity, load_settings
+from app.api import health, tasks, sources, artifacts, browser
+from app.core.config import ROOT, Settings, identity, load_settings
+from app.core.security import BrowserSessions
 from app.core.errors import envelope, handlers
 from app.core.logging import configure, record
 from app.persistence.database import Database
@@ -25,6 +28,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         os.umask(0o077)
         configure()
         api.state.local = identity(settings)
+        api.state.browser_sessions = BrowserSessions()
         database = Database(settings)
         try:
             with database.read() as session:
@@ -36,8 +40,8 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         finally:
             database.close()
 
-    app = FastAPI(title="CareerLens backend foundation", version=__version__, lifespan=lifespan,
-        description="Phase 2: persisted public-source refresh, task polling and private artifacts. No employer submission API.",
+    app = FastAPI(title="CareerLens local workspace", version=__version__, lifespan=lifespan,
+        description="Local web interface, persisted source refresh, task polling and private artifacts. No employer submission API.",
         responses={code: {"model": ErrorEnvelope} for code in (400, 401, 403, 404, 409, 422, 500, 503)})
     app.state.settings = settings
     handlers(app)
@@ -75,6 +79,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         response.headers["X-Correlation-ID"] = correlation_id
         response.headers["Cache-Control"] = "no-store"
         response.headers["X-Content-Type-Options"] = "nosniff"
+        response.headers["Referrer-Policy"] = "no-referrer"
+        response.headers["X-Frame-Options"] = "DENY"
+        response.headers["Cross-Origin-Resource-Policy"] = "same-origin"
+        if request.url.path == "/" or request.url.path.startswith("/web/"):
+            response.headers["Content-Security-Policy"] = (
+                "default-src 'none'; script-src 'self'; style-src 'self'; "
+                "img-src 'self'; connect-src 'self'; base-uri 'none'; "
+                "frame-ancestors 'none'; form-action 'self'")
         if origin in settings.allowed_origins:
             response.headers["Access-Control-Allow-Origin"] = origin
             response.headers["Vary"] = "Origin"
@@ -82,8 +94,14 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                duration_ms=round((time.perf_counter() - started) * 1000))
         return response
 
-    for module in (health, sources, tasks, artifacts):
+    for module in (health, sources, tasks, artifacts, browser):
         app.include_router(module.router)
+
+    @app.get("/", include_in_schema=False)
+    def website():
+        return FileResponse(ROOT / "web" / "index.html")
+
+    app.mount("/web", StaticFiles(directory=ROOT / "web"), name="web")
     return app
 
 
