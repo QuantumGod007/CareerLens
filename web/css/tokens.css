@@ -1,0 +1,19 @@
+:root {
+  --canvas: #f8f8f6;
+  --paper: #fff;
+  --ink: #242438;
+  --muted: #6d6c7e;
+  --line: #e8e7ed;
+  --violet: #5550cf;
+  --lavender: #eeecfb;
+  --mint: #edf8f2;
+  --teal: #287658;
+  --amber-bg: #fff7e9;
+  --amber: #91611c;
+  --coral-bg: #fff0ed;
+  --coral: #a83d32;
+  --radius: 12px;
+  --shadow: 0 5px 20px #24243807;
+  --ease: 150ms ease;
+  --font: Inter,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+}

@@ -13,7 +13,8 @@ def test_generated_openapi_only_contains_real_routes():
     paths = set(create_app().openapi()["paths"])
     assert paths == {"/health", "/api/v1/source-boards", "/api/v1/source-boards/{board_id}/refresh",
         "/api/v1/source-boards/{board_id}/jobs", "/api/v1/tasks/{task_id}",
-        "/api/v1/tasks/{task_id}/events", "/api/v1/artifacts/{artifact_id}"}
+        "/api/v1/tasks/{task_id}/events", "/api/v1/artifacts/{artifact_id}",
+        "/api/v1/browser-session", "/api/v1/browser-session/disconnect"}
     assert not any("approve" in path or "applications" in path for path in paths)
 
 

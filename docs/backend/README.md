@@ -1,6 +1,8 @@
 # Running the Phase 2 backend
 
-This local backend implements source refresh, persistent tasks, polling, migrations and private artifacts. It does not implement full resume/application workflows or a website.
+This local backend implements source refresh, persistent tasks, polling, migrations and private artifacts. Phase 3 serves the vanilla website at `/`; full resume/application workflows remain unfinished.
+
+For everyday development, run **`python -m app.dev`** after installing dependencies. It initializes/upgrades the database, owns the API and separate worker, and stops both on Ctrl+C. Open `http://127.0.0.1:8000/`; browser pairing is automatic through a separate HttpOnly cookie, without copying the private API token. See the root README for session details and browser checks. The manual commands below remain supported.
 
 ## Setup
 
@@ -31,7 +33,7 @@ Terminal 2, from the same root after activation:
 python -m app.worker
 ```
 
-Open [the API docs](http://127.0.0.1:8000/docs). `/health` is public to the local boundary. Other routes require `X-CareerLens-Token`. The token and stable local session ID are stored privately in `data/backend/local-session.json`; use that token locally in Swagger's Authorize dialog. Never commit, share, paste into chat or put it in a URL. There is no public token-issuing endpoint, multi-user login or cloud auth system.
+Open [the API docs](http://127.0.0.1:8000/docs). `/health` is public to the local boundary. Protected routes accept `X-CareerLens-Token` for scripts/Swagger, or the guarded browser cookie for the website. The token and stable local session ID are stored privately in `data/backend/local-session.json`; use that token locally in Swagger's Authorize dialog. Never commit, share, paste into chat or put it in a URL. Browser pairing never returns this persistent token. There is no multi-user login or cloud auth system.
 
 The default host is loopback. Only localhost/127.0.0.1 hosts and explicitly configured local origins are accepted; cross-site browser requests are rejected. The data directory can be changed using `CAREERLENS_DATA_DIR`, but API and worker must use the same value. Do not run the prototype on a public network interface.
 
