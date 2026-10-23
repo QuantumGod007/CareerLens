@@ -1,0 +1,40 @@
+# Local configuration and credentials
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+
+# Python environments and caches
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+*.egg-info/
+build/
+dist/
+
+# Private candidate files, database and browser artifacts
+data/
+resumes/
+uploads/
+artifacts/
+traces/
+screenshots/
+browser-state/
+playwright/.auth/
+*.db
+*.db-*
+*.sqlite
+*.sqlite3
+*.log
+
+# Local editor and operating system files
+.DS_Store
+.idea/
+.vscode/
