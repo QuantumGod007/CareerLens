@@ -1,6 +1,6 @@
 # Contributing to CareerLens
 
-Phase 1 feasibility tools are implemented. The product application has not started. Agree on module interfaces before splitting implementation work.
+Phase 1 feasibility tools and the Phase 2 backend foundation are implemented. Full resume/application services and UI are pending. Agree on module interfaces before splitting implementation work.
 
 ## Team workflow
 
@@ -27,4 +27,6 @@ Do not commit credentials, `.env` files, personal resumes, application answers, 
 
 Run `.venv/bin/python -m pytest -q` for offline checks and the relevant smoke commands in the README. After staging intended files, run `.venv/bin/python -m scripts.feasibility.check_repository_safety` before committing or pushing. Live Groq tests require confirmation that the organization has no paid billing. Default tests never call Groq or load your key. Distinguish live, controlled-browser and mocked results in pull requests.
 
-There is no production API or worker command yet. Phase 2 starts only after the Phase 1 report is reviewed.
+Use the API/worker commands in `docs/backend/README.md`. Normal tests use isolated databases and synthetic/mocked data, including a child-process crash test; they do not contact employers or Groq. Real source-refresh demonstrations are explicitly invoked separately. Regenerate contracts with `python -m app.tools.export_contracts` after intentional endpoint/schema changes.
+
+Do not begin the next phase or merge the Phase 2 draft PR automatically. Review the execution report first.

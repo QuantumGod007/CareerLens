@@ -1,5 +1,5 @@
 [tool.pytest.ini_options]
-testpaths = ["tests/feasibility"]
+testpaths = ["tests"]
 pythonpath = ["."]
 addopts = "-ra"
 markers = [
