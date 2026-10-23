@@ -1,0 +1,70 @@
+{
+  "validation_date_ist": "2026-10-23",
+  "scope": "Phase 2 backend foundation; no employer submission or UI",
+  "tests": {
+    "tests": 84,
+    "failures": 0,
+    "errors": 0,
+    "skipped": 0
+  },
+  "phase1_regression_tests": 41,
+  "phase2_tests": 43,
+  "live_source_demo": {
+    "status": "PASS",
+    "observed_at": "2026-10-23T08:16:21.888775+00:00",
+    "target": "Real local HTTP API and separate worker; live Lever source",
+    "task_id": "2c4cc6d0-5ba4-4595-ada5-bce5730b22ab",
+    "task_status": "SUCCEEDED",
+    "attempts": 1,
+    "result": {
+      "entity_type": "source_board",
+      "entity_id": "f7a9964a-1742-54ea-b19b-a8e1626f0721",
+      "listing_count": 35,
+      "new_snapshots": 35,
+      "reused_snapshots": 0,
+      "duplicates_removed": 0,
+      "data_origin": "live"
+    },
+    "persisted_total": 35,
+    "example_titles": [
+      "Account Executive - CFO Solutions",
+      "Account Executive - CFO Solutions",
+      "Account Executive - CFO Solutions",
+      "Associate - Growth Marketing",
+      "Associate - Product Marketing"
+    ],
+    "idempotent_replay": "PASS",
+    "worker_ready_before": true
+  },
+  "restart_demonstration": {
+    "api_restart_persistence": "PASS",
+    "persisted_jobs_after_restart": 35,
+    "stopped_worker_reported_not_ready": true
+  },
+  "migrations": [
+    "0001_foundation",
+    "0002_guards",
+    "0003_snapshots"
+  ],
+  "known_warning": "Starlette TestClient httpx deprecation; no dependency swap performed",
+  "domain_tables": [
+    "applications",
+    "approvals",
+    "artifacts",
+    "candidates",
+    "events",
+    "facts",
+    "idempotency_records",
+    "job_snapshots",
+    "preparation_runs",
+    "profile_versions",
+    "question_answers",
+    "resume_versions",
+    "search_results",
+    "searches",
+    "source_boards",
+    "source_listings",
+    "tasks",
+    "worker_heartbeats"
+  ]
+}

@@ -1,78 +1,100 @@
 # CareerLens
 
-CareerLens is a planned job application assistant for students and freshers. It will discover jobs, prepare truthful tailored resumes and complete applications after explicit candidate approval.
+CareerLens is a local job application assistant being built for students and freshers. The intended workflow preserves candidate facts and requires approval before submission.
 
 ## Current status
 
-Phase 1 feasibility tooling is implemented and has been executed locally. The production API, database schema, durable worker, resume enhancement workflow and website are **not implemented**. Phase 2 has not started.
+Phase 2 backend foundation is implemented. It runs FastAPI, SQLite migrations and a separate durable worker. A real API request has been processed through SQLite and the worker into the live Drivetrain Lever feed, with 35 jobs persisted and served back through the API.
 
-On 23 October 2026, the checks verified:
+**The complete product is not implemented.** Resume upload/extraction, candidate-specific matching, AI resume tailoring, employer form preparation/submission and the website remain later phases. No employer application was submitted. Phase 3 has not started.
 
-- Python 3.12, dependency imports, SQLite/SQLAlchemy queries and Chromium startup.
-- Live Drivetrain Lever retrieval: 35 postings, two India engineering-intern title matches, stable IDs across two reads and an empty-match case.
-- Read-only live form inspection. It includes hCaptcha; upload, verification and submission remain unverified.
-- One real Groq `openai/gpt-oss-120b` structured-output request with synthetic facts, Pydantic validation and factual checks.
-- Jinja2/Chromium PDF generation, page-specific text extraction, Latin Unicode and invalid-input rejection.
-- Local synthetic form filling, attachment, missing-answer checks and one controlled receipt. This is not an employer submission or durable duplicate protection.
-- 41 offline automated tests. Live and browser probes are separate commands.
+Phase 1 is merged through PR #1. Its scripts, fixtures and 41 tests are preserved. The combined suite currently passes **84 tests**: 41 Phase 1 and 43 backend tests, with zero failures/skips. A Starlette test-client deprecation warning remains; runtime checks pass.
 
-See [the Phase 1 report](docs/feasibility/README.md) for evidence and limitations.
+## Run locally
 
-## Setup
-
-Use Python 3.12 and create a project-local `.venv` with that interpreter. On the validated machine, Codex's bundled Python 3.12.14 created the environment; `python3.12` was not on PATH. A fresh machine needs its own Python 3.12 executable. Windows and Linux have not been tested.
-
-From the repository root, after creating `.venv`:
+Use Python 3.12 and create a local `.venv` with that interpreter. This Mac uses the existing environment created with Codex's bundled Python 3.12.14; `python3.12` was not on its PATH. Then, from the repository root:
 
 ```bash
-.venv/bin/python -m pip install --cache-dir data/pip-cache -r requirements.lock.txt
-PLAYWRIGHT_BROWSERS_PATH="$PWD/data/playwright" .venv/bin/python -m playwright install chromium
-.venv/bin/python -m scripts.feasibility.check_environment
+source .venv/bin/activate
+python -m pip install --cache-dir data/pip-cache -r requirements.lock.txt
+python -m app.tools.init_db
 ```
 
-`requirements.in` lists direct dependencies; `requirements.lock.txt` records exact tested versions and transitive dependencies. The lock was tested on macOS ARM64.
-
-If `.env` does not exist, copy `.env.example` to `.env`, restrict it to owner access (`chmod 600 .env`) and edit it locally. Do not overwrite an existing populated file.
-
-| Variable | Value |
-| --- | --- |
-| `GROQ_API_KEY` | Your local Groq key; never commit it |
-| `GROQ_MODEL` | `openai/gpt-oss-120b` |
-
-Only Groq and this model are supported. There is no automatic fallback, key rotation or paid upgrade. The live AI probe requires explicit confirmation that the organization has no paid billing; it cannot independently inspect billing.
-
-## Run the checks
-
-These commands have been executed on the validation machine:
+Start the API in one activated terminal:
 
 ```bash
-.venv/bin/python -m pytest -q
-.venv/bin/python -m scripts.feasibility.check_environment
-.venv/bin/python -m scripts.feasibility.test_job_source --location India
-.venv/bin/python -m scripts.feasibility.inspect_application_form
-.venv/bin/python -m scripts.feasibility.test_groq --without-credentials
-.venv/bin/python -m scripts.feasibility.test_groq --confirm-free-plan
-.venv/bin/python -m scripts.feasibility.test_pdf_pipeline
-.venv/bin/python -m scripts.feasibility.test_controlled_form
-.venv/bin/python -m scripts.feasibility.check_repository_safety
+uvicorn app.main:app --host 127.0.0.1 --port 8000 --no-access-log
 ```
 
-Run the PDF probe before the controlled-form probe. Employer inspection makes GET/HEAD requests only, never fills fields and never submits. The separate controlled form operates locally with networking disabled.
+Start the worker in another activated terminal:
 
-Reports, synthetic PDFs, browser downloads and screenshots stay in ignored `data/`. Probes print sanitized results and exit nonzero on failures; they do not dump SDK exceptions, headers or credentials. Results can change after the recorded run.
+```bash
+python -m app.worker
+```
 
-## Intended workflow
+Open [API documentation](http://127.0.0.1:8000/docs). The private local session token in `data/backend/local-session.json` authorizes protected routes; never share or commit it. The demo below reads it internally without displaying it:
 
-Upload resume → confirm profile → discover/select job → analyse JD → truthful resume enhancement → generate PDF → prepare application → collect missing answers → review → approve → submit → verify receipt.
+```bash
+python -m scripts.backend.demo_refresh
+pytest -q
+```
 
-The initial product serves one local candidate, one board, one PDF layout and one application at a time. Its proposed stack is FastAPI, Pydantic, SQLite/SQLAlchemy, one durable worker, Playwright, pdfplumber, Jinja2 and Groq. Backend functionality comes before UI. The initial future website will use vanilla HTML, CSS and JavaScript; visual redesign is deferred.
+See [the full backend guide](docs/backend/README.md) for setup, polling, migration/recovery behaviour, security and troubleshooting.
 
-## Next phase
+## Implemented endpoints
 
-Review Phase 1 before starting Phase 2: API/persistence/worker foundation and versioned contracts. See [architecture decisions](docs/feasibility/architecture-decisions.md) for dry-run/live-run lifecycle and safe retries.
+| Method | Path | Behaviour |
+| --- | --- | --- |
+| GET | `/health` | Real API/database/worker readiness and safe config presence |
+| GET | `/api/v1/source-boards` | Configured sources and validation/refresh state |
+| POST | `/api/v1/source-boards/{board_id}/refresh` | Durable, idempotent task creation |
+| GET | `/api/v1/source-boards/{board_id}/jobs` | Stored current jobs with bounded pagination |
+| GET | `/api/v1/tasks/{task_id}` | Persisted status, step, attempts, lease, errors and result |
+| GET | `/api/v1/tasks/{task_id}/events` | Redacted task history |
+| GET | `/api/v1/artifacts/{artifact_id}` | Owned, integrity-verified private bytes |
 
-The six original Word documents remain outside this repository. Their referenced OpenAPI and AI schema companions were not found in the repository or expected handoff paths, so no machine-readable contract parity is claimed.
+All mutations require Idempotency-Key. Repeated keys replay the original response; changed requests conflict. Different keys cannot create duplicate active refreshes for one board. Read routes do not fetch live data.
 
-## Collaboration and private data
+The worker is singleton by default, uses persisted leases/heartbeats, retries only bounded safe reads and recovers abandoned safe tasks. Possible-send simulations become OUTCOME_UNKNOWN and never retry automatically. No live submission handler exists.
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Never commit credentials, real resumes, application answers, databases, browser sessions or private traces. Run the repository-safety check after staging intended files; it scans the index and reachable history without printing credentials.
+## Configuration and credentials
+
+Copy `.env.example` only if no populated `.env` already exists, then edit locally with owner-only permissions. Keep `.env`, session files, databases, browser state, PDFs and private reports out of Git.
+
+- `GROQ_API_KEY`: local Groq credential, never returned by the API.
+- `GROQ_MODEL`: fixed to `openai/gpt-oss-120b`; no fallback or Gemini integration.
+- `CAREERLENS_DATA_DIR`: shared local API/worker data directory, default `data/backend`.
+- `CAREERLENS_ALLOWED_ORIGINS`: explicit permitted local origins; no wildcard.
+- Lease/heartbeat/poll/retry intervals are documented in `.env.example`.
+
+Groq is not called by Phase 2 task processing or normal tests. Its Phase 1 live smoke test remains opt-in and requires confirmation of a Free-plan organization with no paid billing. Never assume a chat subscription provides API quota.
+
+## Evidence and contracts
+
+- [Phase 2 execution report](docs/backend/phase-2-report.md)
+- [Backend operation guide](docs/backend/README.md)
+- [Implemented and planned contract status](docs/contracts/implementation-status.md)
+- [Phase 1 feasibility report](docs/feasibility/README.md)
+
+`contracts/openapi.json` comes from the implemented app. AI schemas are explicitly marked defined-only; example records are synthetic. Original Word documents remain external.
+
+To regenerate and check:
+
+```bash
+python -m app.tools.export_contracts
+python -m scripts.feasibility.check_repository_safety
+```
+
+The safety check scans staged files and reachable history for Groq patterns and configured Groq/local-session secrets. It never prints credential values.
+
+## Phase 1 tooling and limits
+
+The original `scripts/feasibility/` probes remain available for environment, public feed, read-only form, Groq and PDF checks. Browser setup on a fresh machine:
+
+```bash
+PLAYWRIGHT_BROWSERS_PATH="$PWD/data/playwright" python -m playwright install chromium
+```
+
+No browser is needed for the Phase 2 source-refresh worker. Real employer form submission and hCaptcha handling remain unverified. This is one local candidate/source and one worker, not multi-user production hosting. macOS ARM64 was validated; other platforms need their own checks.
+
+Review Phase 2 before starting the next phase. UI appearance and frontend work remain deferred until the backend workflows are operational. See [CONTRIBUTING.md](CONTRIBUTING.md) for collaboration.

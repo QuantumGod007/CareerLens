@@ -1,0 +1,444 @@
+{
+  "$defs": {
+    "ChangeRecord": {
+      "additionalProperties": false,
+      "properties": {
+        "after": {
+          "title": "After",
+          "type": "string"
+        },
+        "before": {
+          "title": "Before",
+          "type": "string"
+        },
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "section": {
+          "title": "Section",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Fact Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "section",
+        "item_id",
+        "before",
+        "after",
+        "reason",
+        "source_fact_ids"
+      ],
+      "title": "ChangeRecord",
+      "type": "object"
+    },
+    "ClaimViolation": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "reason": {
+          "title": "Reason",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "title": "Source Fact Ids",
+          "type": "array"
+        }
+      },
+      "required": [
+        "item_id",
+        "reason",
+        "source_fact_ids"
+      ],
+      "title": "ClaimViolation",
+      "type": "object"
+    },
+    "EvidenceStatement": {
+      "additionalProperties": false,
+      "properties": {
+        "source_span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "text",
+        "source_span"
+      ],
+      "title": "EvidenceStatement",
+      "type": "object"
+    },
+    "GeneratedClaim": {
+      "additionalProperties": false,
+      "properties": {
+        "item_id": {
+          "title": "Item Id",
+          "type": "string"
+        },
+        "section": {
+          "title": "Section",
+          "type": "string"
+        },
+        "source_fact_ids": {
+          "items": {
+            "format": "uuid",
+            "type": "string"
+          },
+          "minItems": 1,
+          "title": "Source Fact Ids",
+          "type": "array"
+        },
+        "text": {
+          "title": "Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "item_id",
+        "section",
+        "text",
+        "source_fact_ids"
+      ],
+      "title": "GeneratedClaim",
+      "type": "object"
+    },
+    "JsonValue": {},
+    "ProfileDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "contact": {
+          "additionalProperties": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "title": "Contact",
+          "type": "object"
+        },
+        "education": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Education",
+          "type": "array"
+        },
+        "experience": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Experience",
+          "type": "array"
+        },
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/SourcedFact"
+          },
+          "title": "Facts",
+          "type": "array"
+        },
+        "other_sections": {
+          "additionalProperties": {
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "title": "Other Sections",
+          "type": "object"
+        },
+        "projects": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Projects",
+          "type": "array"
+        },
+        "skills": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Skills",
+          "type": "array"
+        },
+        "warnings": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Warnings",
+          "type": "array"
+        }
+      },
+      "required": [
+        "contact",
+        "education",
+        "skills",
+        "projects",
+        "experience",
+        "other_sections",
+        "facts",
+        "warnings"
+      ],
+      "title": "ProfileDraft",
+      "type": "object"
+    },
+    "SkillRequirement": {
+      "additionalProperties": false,
+      "properties": {
+        "canonical_name": {
+          "title": "Canonical Name",
+          "type": "string"
+        },
+        "source_span": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "verbatim_text": {
+          "title": "Verbatim Text",
+          "type": "string"
+        }
+      },
+      "required": [
+        "canonical_name",
+        "verbatim_text",
+        "source_span"
+      ],
+      "title": "SkillRequirement",
+      "type": "object"
+    },
+    "SourceSpan": {
+      "additionalProperties": false,
+      "properties": {
+        "end_offset": {
+          "minimum": 1,
+          "title": "End Offset",
+          "type": "integer"
+        },
+        "page": {
+          "anyOf": [
+            {
+              "minimum": 1,
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Page"
+        },
+        "source_text": {
+          "minLength": 1,
+          "title": "Source Text",
+          "type": "string"
+        },
+        "start_offset": {
+          "minimum": 0,
+          "title": "Start Offset",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "page",
+        "start_offset",
+        "end_offset",
+        "source_text"
+      ],
+      "title": "SourceSpan",
+      "type": "object"
+    },
+    "SourcedFact": {
+      "additionalProperties": false,
+      "properties": {
+        "id": {
+          "format": "uuid",
+          "title": "Id",
+          "type": "string"
+        },
+        "kind": {
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/SourceSpan"
+        },
+        "value": {
+          "$ref": "#/$defs/JsonValue"
+        }
+      },
+      "required": [
+        "id",
+        "kind",
+        "value",
+        "source_ref"
+      ],
+      "title": "SourcedFact",
+      "type": "object"
+    },
+    "StructuredJD": {
+      "additionalProperties": false,
+      "properties": {
+        "eligibility": {
+          "items": {
+            "$ref": "#/$defs/EvidenceStatement"
+          },
+          "title": "Eligibility",
+          "type": "array"
+        },
+        "employer": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Employer"
+        },
+        "preferred_skills": {
+          "items": {
+            "$ref": "#/$defs/SkillRequirement"
+          },
+          "title": "Preferred Skills",
+          "type": "array"
+        },
+        "required_skills": {
+          "items": {
+            "$ref": "#/$defs/SkillRequirement"
+          },
+          "title": "Required Skills",
+          "type": "array"
+        },
+        "responsibilities": {
+          "items": {
+            "$ref": "#/$defs/EvidenceStatement"
+          },
+          "title": "Responsibilities",
+          "type": "array"
+        },
+        "title": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Title"
+        },
+        "uncertainties": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Uncertainties",
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "employer",
+        "required_skills",
+        "preferred_skills",
+        "responsibilities",
+        "eligibility",
+        "uncertainties"
+      ],
+      "title": "StructuredJD",
+      "type": "object"
+    },
+    "TailoredContent": {
+      "additionalProperties": false,
+      "properties": {
+        "changes": {
+          "items": {
+            "$ref": "#/$defs/ChangeRecord"
+          },
+          "title": "Changes",
+          "type": "array"
+        },
+        "claims": {
+          "items": {
+            "$ref": "#/$defs/GeneratedClaim"
+          },
+          "title": "Claims",
+          "type": "array"
+        },
+        "selected_section_order": {
+          "items": {
+            "type": "string"
+          },
+          "title": "Selected Section Order",
+          "type": "array"
+        }
+      },
+      "required": [
+        "claims",
+        "changes",
+        "selected_section_order"
+      ],
+      "title": "TailoredContent",
+      "type": "object"
+    },
+    "VerificationResult": {
+      "additionalProperties": false,
+      "properties": {
+        "pass": {
+          "title": "Pass",
+          "type": "boolean"
+        },
+        "uncertain_claims": {
+          "items": {
+            "$ref": "#/$defs/ClaimViolation"
+          },
+          "title": "Uncertain Claims",
+          "type": "array"
+        },
+        "violations": {
+          "items": {
+            "$ref": "#/$defs/ClaimViolation"
+          },
+          "title": "Violations",
+          "type": "array"
+        }
+      },
+      "required": [
+        "pass",
+        "violations",
+        "uncertain_claims"
+      ],
+      "title": "VerificationResult",
+      "type": "object"
+    }
+  },
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "description": "Defined future contracts, not implemented AI services.",
+  "title": "CareerLens AI contracts",
+  "x-contract-version": "0.2.0",
+  "x-implementation-status": "defined-only"
+}

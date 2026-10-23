@@ -3,8 +3,10 @@
 from __future__ import annotations
 
 import re
+import json
+import os
 import subprocess
-from pathlib import PurePosixPath
+from pathlib import Path, PurePosixPath
 
 from dotenv import dotenv_values
 
@@ -25,8 +27,14 @@ def private_path(path: str) -> bool:
 
 
 def check() -> dict:
-    key = dotenv_values(ROOT / ".env").get("GROQ_API_KEY")
-    secret = key.encode() if key else None
+    env = {**dotenv_values(ROOT / ".env"), **os.environ}
+    key = env.get("GROQ_API_KEY")
+    secrets = [key.encode()] if key else []
+    local_file = Path(env.get("CAREERLENS_DATA_DIR") or ROOT / "data" / "backend") / "local-session.json"
+    if local_file.exists():
+        token = json.loads(local_file.read_text()).get("token")
+        if token:
+            secrets.append(token.encode())
     tracked = git("ls-files", "-z").decode().split("\0")
     violations = []
     # Index bytes are what a commit would publish; never print matching contents.
@@ -34,7 +42,7 @@ def check() -> dict:
         if private_path(path):
             violations.append({"path": path, "reason": "private_path_in_index"})
         content = git("show", f":{path}")
-        if KEY_PATTERN.search(content) or (secret and secret in content):
+        if KEY_PATTERN.search(content) or any(secret in content for secret in secrets):
             violations.append({"path": path, "reason": "credential_in_index"})
     # Verify the supplied credential is absent from all reachable file blobs too.
     objects = git("rev-list", "--objects", "--all").splitlines()
@@ -45,7 +53,7 @@ def check() -> dict:
             continue
         blobs_checked += 1
         content = git("cat-file", "blob", sha)
-        if KEY_PATTERN.search(content) or (secret and secret in content):
+        if KEY_PATTERN.search(content) or any(secret in content for secret in secrets):
             violations.append({"object": sha, "reason": "credential_in_history"})
     ignored = subprocess.run(["git", "check-ignore", "-q", ".env"], cwd=ROOT).returncode == 0
     return {"status": "PASS" if ignored and not violations else "FAIL",
