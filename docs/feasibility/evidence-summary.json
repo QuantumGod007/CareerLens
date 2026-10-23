@@ -1,0 +1,163 @@
+{
+  "validation_date_ist": "2026-10-23",
+  "scope": "Phase 1 only",
+  "environment": {
+    "observed_at": "2026-10-23T07:06:14.138214+00:00",
+    "status": "PASS",
+    "python": "3.12.14",
+    "os": "macOS-27.0.1-arm64-arm-64bit",
+    "machine": "arm64",
+    "sqlite": "3.53.1",
+    "chromium": "156.0.8078.4",
+    "packages": {
+      "fastapi": "0.161.1",
+      "pydantic": "2.14.1",
+      "sqlalchemy": "2.1.6",
+      "httpx": "0.28.1",
+      "groq": "0.37.1",
+      "playwright": "1.64.1",
+      "pdfplumber": "0.11.10",
+      "jinja2": "3.1.6",
+      "pytest": "9.1.1",
+      "python-dotenv": "1.2.4",
+      "pypdf": "6.21.2"
+    },
+    "checks": [
+      "imports",
+      "sqlite_query",
+      "sqlalchemy_sqlite_query",
+      "chromium_launch",
+      "page_interaction"
+    ]
+  },
+  "job_source": {
+    "observed_at": "2026-10-23T06:56:56.347282+00:00",
+    "status": "PASS",
+    "endpoint": "https://api.lever.co/v0/postings/drivetrain?mode=json",
+    "listing_count": 35,
+    "duplicates_removed": 0,
+    "ids_equal_across_two_reads": true,
+    "empty_match_test": "PASS"
+  },
+  "job_matches": [
+    {
+      "external_id": "bc1c17bc-86ac-4f00-a1e3-0eb85aae4fdc",
+      "title": "Engineering Intern – Gen AI for FP&A Platform",
+      "location": "India",
+      "employment_type": "Internship",
+      "source_url": "https://jobs.lever.co/drivetrain/bc1c17bc-86ac-4f00-a1e3-0eb85aae4fdc",
+      "apply_url": "https://jobs.lever.co/drivetrain/bc1c17bc-86ac-4f00-a1e3-0eb85aae4fdc/apply"
+    },
+    {
+      "external_id": "edb8a8f7-16ac-4177-bf2e-99c36ab47d5f",
+      "title": "Quality Assurance Engineering (QAE) - Intern",
+      "location": "India",
+      "employment_type": "Internship",
+      "source_url": "https://jobs.lever.co/drivetrain/edb8a8f7-16ac-4177-bf2e-99c36ab47d5f",
+      "apply_url": "https://jobs.lever.co/drivetrain/edb8a8f7-16ac-4177-bf2e-99c36ab47d5f/apply"
+    }
+  ],
+  "form": {
+    "observed_at": "2026-10-23T06:58:34.130046+00:00",
+    "status": "PASS",
+    "scope": "Read-only live form inspection; submission NOT TESTED",
+    "destination": "https://jobs.lever.co/drivetrain/bc1c17bc-86ac-4f00-a1e3-0eb85aae4fdc/apply",
+    "http_status": 200,
+    "resume_upload_present": true,
+    "password_field_present": false,
+    "verification_script_urls": [
+      "https://js.hcaptcha.com/1/secure-api.js?host=jobs.lever.co&onload=onLoad"
+    ],
+    "interactions": {
+      "filled_fields": 0,
+      "uploaded_files": 0,
+      "submit_clicks": 0
+    }
+  },
+  "groq": {
+    "observed_at": "2026-10-23T06:58:34.037054+00:00",
+    "status": "PASS",
+    "provider": "groq",
+    "model": "openai/gpt-oss-120b",
+    "schema_mode": "json_schema_strict",
+    "schema_validation": "PASS",
+    "factual_validation": "PASS",
+    "synthetic_data_only": true,
+    "latency_seconds": 1.211,
+    "usage": {
+      "prompt_tokens": 274,
+      "completion_tokens": 136,
+      "total_tokens": 410
+    },
+    "comparison": {
+      "matched_skills": [
+        "Python",
+        "SQL"
+      ],
+      "not_evidenced_skills": [
+        "Docker",
+        "AWS"
+      ],
+      "candidate_skills": [
+        "Python",
+        "FastAPI",
+        "SQL",
+        "Git"
+      ]
+    },
+    "automatic_retries": 0,
+    "fallback_enabled": false,
+    "free_plan_basis": "User confirmation; billing not independently inspected"
+  },
+  "missing_key": {
+    "observed_at": "2026-10-23T07:00:24.138742+00:00",
+    "status": "PASS",
+    "code": "MISSING_API_KEY",
+    "network_requests": 0
+  },
+  "pdf": {
+    "observed_at": "2026-10-23T07:06:14.751311+00:00",
+    "status": "PASS",
+    "unicode_roundtrip": "PASS",
+    "html_escaping": "PASS",
+    "scripts_disabled": true,
+    "network_disabled": true,
+    "negative_fixtures": {
+      "empty": "EMPTY_PDF",
+      "blank": "NO_EXTRACTABLE_TEXT",
+      "too-many-pages": "TOO_MANY_PAGES",
+      "encrypted": "ENCRYPTED_PDF",
+      "malformed": "UNREADABLE_PDF",
+      "truncated": "UNREADABLE_PDF",
+      "oversized": "PDF_TOO_LARGE"
+    }
+  },
+  "controlled_form": {
+    "observed_at": "2026-10-23T07:04:43.447034+00:00",
+    "status": "PASS",
+    "target": "Local controlled fixture, not an employer",
+    "network_disabled": true,
+    "synthetic_data_only": true,
+    "checks": [
+      "required_field_validation",
+      "text_inputs",
+      "select",
+      "checkbox",
+      "synthetic_pdf_attachment",
+      "missing_answer_pause",
+      "ready_without_submit",
+      "one_controlled_receipt"
+    ],
+    "paused_before_final_action": true,
+    "controlled_receipt_count": 1,
+    "limitations": [
+      "No durable approval or idempotency implementation in Phase 1",
+      "Local DOM receipt does not prove employer submission"
+    ]
+  },
+  "offline_tests": {
+    "tests": 41,
+    "failures": 0,
+    "errors": 0
+  }
+}

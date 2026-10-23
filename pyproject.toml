@@ -1,0 +1,7 @@
+[tool.pytest.ini_options]
+testpaths = ["tests/feasibility"]
+pythonpath = ["."]
+addopts = "-ra"
+markers = [
+    "live: explicitly enabled network integration checks",
+]

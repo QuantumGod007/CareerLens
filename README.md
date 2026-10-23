@@ -1,61 +1,78 @@
 # CareerLens
 
-CareerLens is a planned job application assistant for students and freshers.
+CareerLens is a planned job application assistant for students and freshers. It will discover jobs, prepare truthful tailored resumes and complete applications after explicit candidate approval.
 
-The initial prototype will support uploading and confirming a resume, discovering jobs on one supported company careers board, preparing a truthful tailored PDF, and reviewing an application before explicitly approving submission.
+## Current status
 
-## Project status
+Phase 1 feasibility tooling is implemented and has been executed locally. The production API, database schema, durable worker, resume enhancement workflow and website are **not implemented**. Phase 2 has not started.
 
-Planning and repository setup. Application implementation has not started.
+On 23 October 2026, the checks verified:
 
-This repository does not yet contain a runnable application. The stack and workflow below describe the intended prototype.
+- Python 3.12, dependency imports, SQLite/SQLAlchemy queries and Chromium startup.
+- Live Drivetrain Lever retrieval: 35 postings, two India engineering-intern title matches, stable IDs across two reads and an empty-match case.
+- Read-only live form inspection. It includes hCaptcha; upload, verification and submission remain unverified.
+- One real Groq `openai/gpt-oss-120b` structured-output request with synthetic facts, Pydantic validation and factual checks.
+- Jinja2/Chromium PDF generation, page-specific text extraction, Latin Unicode and invalid-input rejection.
+- Local synthetic form filling, attachment, missing-answer checks and one controlled receipt. This is not an employer submission or durable duplicate protection.
+- 41 offline automated tests. Live and browser probes are separate commands.
 
-## Planned workflow
+See [the Phase 1 report](docs/feasibility/README.md) for evidence and limitations.
 
-1. Upload a text-based PDF resume and enter a preferred job title.
-2. Review and confirm the extracted candidate facts.
-3. Discover up to five live jobs from a configured company careers board and select one.
-4. Analyse the job description and show supported skills and missing requirements.
-5. Generate a tailored PDF using only confirmed facts, with a change log.
-6. Prepare the supported application form and ask the candidate for missing answers.
-7. Review the exact PDF and answers, then explicitly approve submission.
-8. Submit once and show confirmed receipt, a clear rejection or an unknown outcome.
+## Setup
 
-## Initial scope
+Use Python 3.12 and create a project-local `.venv` with that interpreter. On the validated machine, Codex's bundled Python 3.12.14 created the environment; `python3.12` was not on PATH. A fresh machine needs its own Python 3.12 executable. Windows and Linux have not been tested.
 
-- One local candidate and one supported job board.
-- Resume parsing, fact confirmation, job discovery and job description analysis.
-- Resume improvements supported by confirmed candidate facts.
-- Application preparation, missing-answer handling and explicit approval.
-- Submission tracking with destination confirmation or an explicit unknown outcome.
+From the repository root, after creating `.venv`:
 
-## Proposed stack
+```bash
+.venv/bin/python -m pip install --cache-dir data/pip-cache -r requirements.lock.txt
+PLAYWRIGHT_BROWSERS_PATH="$PWD/data/playwright" .venv/bin/python -m playwright install chromium
+.venv/bin/python -m scripts.feasibility.check_environment
+```
 
-Python, FastAPI, Pydantic, SQLAlchemy with SQLite, one local worker, Playwright, pdfplumber, Jinja2 and one validated AI provider.
+`requirements.in` lists direct dependencies; `requirements.lock.txt` records exact tested versions and transitive dependencies. The lock was tested on macOS ARM64.
 
-## First prototype priorities
+If `.env` does not exist, copy `.env.example` to `.env`, restrict it to owner access (`chmod 600 .env`) and edit it locally. Do not overwrite an existing populated file.
 
-Validate a live job board, its hosted application form and an available AI account first. Then build the API and worker, resume pipeline, application preparation, approval and outcome tracking. Add a minimal local interface after the backend flow works.
-
-Multiple portals, bulk applications, recruiter outreach, a browser extension and production hosting are outside the first prototype.
-
-## Project documentation
-
-The planning set contains six documents:
-
-| Document | Purpose |
+| Variable | Value |
 | --- | --- |
-| Product requirements | Product goals, user journey and release scope |
-| Software requirements | Testable behaviour and acceptance criteria |
-| Architecture and UML | Modules, data relationships and workflow states |
-| API and AI specifications | Endpoints, model contracts and approval rules |
-| Tech stack and setup | Proposed dependencies and setup validation |
-| Implementation plan | Build sequence, checkpoints, tests and demo fallback |
+| `GROQ_API_KEY` | Your local Groq key; never commit it |
+| `GROQ_MODEL` | `openai/gpt-oss-120b` |
 
-These documents are maintained separately and have not been included in this repository. Public copies should be reviewed before being added. The referenced OpenAPI and AI schema files also need to be checked before implementation.
+Only Groq and this model are supported. There is no automatic fallback, key rotation or paid upgrade. The live AI probe requires explicit confirmation that the organization has no paid billing; it cannot independently inspect billing.
 
-Installation and run instructions will be added when the application exists and the commands have been verified.
+## Run the checks
 
-## Collaboration
+These commands have been executed on the validation machine:
 
-See [CONTRIBUTING.md](CONTRIBUTING.md) for the team workflow. Never commit API keys, personal resumes, application answers or browser session data.
+```bash
+.venv/bin/python -m pytest -q
+.venv/bin/python -m scripts.feasibility.check_environment
+.venv/bin/python -m scripts.feasibility.test_job_source --location India
+.venv/bin/python -m scripts.feasibility.inspect_application_form
+.venv/bin/python -m scripts.feasibility.test_groq --without-credentials
+.venv/bin/python -m scripts.feasibility.test_groq --confirm-free-plan
+.venv/bin/python -m scripts.feasibility.test_pdf_pipeline
+.venv/bin/python -m scripts.feasibility.test_controlled_form
+.venv/bin/python -m scripts.feasibility.check_repository_safety
+```
+
+Run the PDF probe before the controlled-form probe. Employer inspection makes GET/HEAD requests only, never fills fields and never submits. The separate controlled form operates locally with networking disabled.
+
+Reports, synthetic PDFs, browser downloads and screenshots stay in ignored `data/`. Probes print sanitized results and exit nonzero on failures; they do not dump SDK exceptions, headers or credentials. Results can change after the recorded run.
+
+## Intended workflow
+
+Upload resume → confirm profile → discover/select job → analyse JD → truthful resume enhancement → generate PDF → prepare application → collect missing answers → review → approve → submit → verify receipt.
+
+The initial product serves one local candidate, one board, one PDF layout and one application at a time. Its proposed stack is FastAPI, Pydantic, SQLite/SQLAlchemy, one durable worker, Playwright, pdfplumber, Jinja2 and Groq. Backend functionality comes before UI. The initial future website will use vanilla HTML, CSS and JavaScript; visual redesign is deferred.
+
+## Next phase
+
+Review Phase 1 before starting Phase 2: API/persistence/worker foundation and versioned contracts. See [architecture decisions](docs/feasibility/architecture-decisions.md) for dry-run/live-run lifecycle and safe retries.
+
+The six original Word documents remain outside this repository. Their referenced OpenAPI and AI schema companions were not found in the repository or expected handoff paths, so no machine-readable contract parity is claimed.
+
+## Collaboration and private data
+
+See [CONTRIBUTING.md](CONTRIBUTING.md). Never commit credentials, real resumes, application answers, databases, browser sessions or private traces. Run the repository-safety check after staging intended files; it scans the index and reachable history without printing credentials.

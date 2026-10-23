@@ -1,6 +1,6 @@
 # Contributing to CareerLens
 
-The project is currently in planning and repository setup. Agree on module interfaces before splitting implementation work.
+Phase 1 feasibility tools are implemented. The product application has not started. Agree on module interfaces before splitting implementation work.
 
 ## Team workflow
 
@@ -25,4 +25,6 @@ Do not commit credentials, `.env` files, personal resumes, application answers, 
 
 ## Validation
 
-Run the checks relevant to your change and describe the results in the pull request. Installation, startup and test commands will be documented after they have been implemented and verified; there are no application checks to run yet.
+Run `.venv/bin/python -m pytest -q` for offline checks and the relevant smoke commands in the README. After staging intended files, run `.venv/bin/python -m scripts.feasibility.check_repository_safety` before committing or pushing. Live Groq tests require confirmation that the organization has no paid billing. Default tests never call Groq or load your key. Distinguish live, controlled-browser and mocked results in pull requests.
+
+There is no production API or worker command yet. Phase 2 starts only after the Phase 1 report is reviewed.
