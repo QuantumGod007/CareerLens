@@ -1,14 +1,13 @@
 # Contributing to CareerLens
 
-Phase 1 feasibility tools and the Phase 2 backend foundation are implemented. Full resume/application services and UI are pending. Agree on module interfaces before splitting implementation work.
+Phase 1 feasibility tools, the Phase 2 backend and Phase 3 local website are implemented. Full resume/application services are pending. CareerLens currently has one owner; keep changes focused and easy to run locally.
 
-## Team workflow
+## Development workflow
 
-1. Create or choose an issue describing a small, concrete task and its expected result.
-2. Branch from the latest `main`. Use descriptive names such as `feature/resume-parser`, `fix/job-filter` or `docs/setup`.
-3. Keep changes focused and coordinate before editing a module another teammate owns.
-4. Open a pull request to `main`, describing what changed, how it was checked and any remaining limitations.
-5. Ask a teammate to review before merging. Keep the README consistent with what actually runs.
+1. Start from the latest `main` on a descriptive branch, normally `codex/<change>` for agent work.
+2. Preserve existing code, tests and useful documentation. Implement and test the complete change.
+3. Check the staged diff and credentials, make meaningful commits and push verified work.
+4. Keep the README consistent with what runs. PRs and review are optional when useful; no formal handoff or draft PR is required for every phase. Do not force-push or overwrite unrelated work.
 
 ## Candidate facts and application approval
 
@@ -29,4 +28,4 @@ Run `.venv/bin/python -m pytest -q` for offline checks and the relevant smoke co
 
 Use the API/worker commands in `docs/backend/README.md`. Normal tests use isolated databases and synthetic/mocked data, including a child-process crash test; they do not contact employers or Groq. Real source-refresh demonstrations are explicitly invoked separately. Regenerate contracts with `python -m app.tools.export_contracts` after intentional endpoint/schema changes.
 
-Do not begin the next phase or merge the Phase 2 draft PR automatically. Review the execution report first.
+Start locally with `python -m app.dev`. Stop after the requested phase; do not start another phase or merge branches automatically.

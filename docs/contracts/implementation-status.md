@@ -1,6 +1,6 @@
 # Contract implementation status
 
-Version 0.2.0, 23 October 2026. The original machine-readable companions were unavailable. These contracts were reconstructed from document 04, the six previously reviewed project documents and the Phase 1 architecture decisions.
+Version 0.3.0, 23 October 2026. Phase 3 adds the local browser session routes below; existing domain contracts and database migrations are unchanged. The original machine-readable companions were unavailable. The Phase 2 contracts were reconstructed from document 04, the six reviewed project documents and Phase 1 architecture decisions.
 
 `contracts/openapi.json` is exported from the actual FastAPI application using `python -m app.tools.export_contracts`. An automated comparison prevents drift. It contains only these implemented operations:
 
@@ -13,8 +13,10 @@ Version 0.2.0, 23 October 2026. The original machine-readable companions were un
 | GET | /api/v1/tasks/{task_id} | Persisted state, attempts, progress, lease, error code and result reference/statistics |
 | GET | /api/v1/tasks/{task_id}/events | Up to 100 chronological redacted task events |
 | GET | /api/v1/artifacts/{artifact_id} | Owned, hash-verified bytes downloaded as an attachment |
+| POST | /api/v1/browser-session | Exact-origin loopback browser pairing with a separate HttpOnly cookie; no persistent token disclosure |
+| POST | /api/v1/browser-session/disconnect | Revoke and clear the browser capability |
 
-UUIDs and UTC timestamps are serialized explicitly. Unknown values remain null. Commands reject extra fields and type coercion. All implemented mutations require Idempotency-Key. Local session token protection is described in the OpenAPI security scheme. Errors use a common code/message/retryable/details/correlation_id envelope; invalid request values are never reflected.
+UUIDs and UTC timestamps are serialized explicitly. Unknown values remain null. Domain commands reject extra fields and type coercion. Source refresh requires Idempotency-Key. OpenAPI describes alternative persistent header-token or browser-cookie authorization. Cookie access additionally requires loopback peer and same-origin browser metadata; cookie mutations and pairing require the exact Origin, JSON and X-CareerLens-Local header. Errors use the existing common envelope; invalid request values are never reflected. Static `/` and `/web/` routes are excluded from the API schema; `/docs` remains available. Artifact downloads are still API-only in this phase.
 
 ## Defined future contracts
 
