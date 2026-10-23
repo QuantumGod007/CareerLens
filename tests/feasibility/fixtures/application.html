@@ -1,0 +1,26 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>CareerLens controlled form</title>
+<h1>Controlled synthetic application form</h1>
+<p>This fixture is local. It is not an employer website.</p>
+<form id="application">
+  <label>Full name <input name="full_name" required></label>
+  <label>Email <input name="email" type="email" required></label>
+  <label>Phone <input name="phone" type="tel"></label>
+  <label for="work-type">Work type</label><select id="work-type" name="work_type" required>
+    <option value="">Select one</option><option value="internship">Internship</option>
+    <option value="full_time">Full time</option></select>
+  <label>Resume <input name="resume" type="file" accept=".pdf" required></label>
+  <label>Answer this required question <textarea name="answer" required></textarea></label>
+  <label><input name="consent" type="checkbox" required> I approve this local test</label>
+  <button type="submit">Submit local test</button>
+</form>
+<p id="receipt" hidden>CONTROLLED_RECEIVER_RECEIPT</p>
+<script>
+  window.receiptCount = 0;
+  document.querySelector('form').addEventListener('submit', event => {
+    event.preventDefault();
+    window.receiptCount += 1;
+    document.querySelector('#receipt').hidden = false;
+  });
+</script>
+</html>
