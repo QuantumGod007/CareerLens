@@ -6,16 +6,18 @@ from pydantic.json_schema import models_json_schema
 from app.core.config import ROOT
 from app.main import create_app
 from app.schemas.ai import ProfileDraft, StructuredJD, TailoredContent, VerificationResult
+from app.schemas.profile_ai import GroqProfileDraft
 from app.tools.init_db import BOARD_ID
 
 
 def documents():
     _, ai = models_json_schema([(model, "validation") for model in (
-        ProfileDraft, StructuredJD, TailoredContent, VerificationResult)],
+        ProfileDraft, StructuredJD, TailoredContent, VerificationResult, GroqProfileDraft)],
         title="CareerLens AI contracts", description="Phase 4 evidence contracts with local extraction and verified Groq resume wording.")
     ai.update({"$schema": "https://json-schema.org/draft/2020-12/schema",
-               "x-implementation-status": "implemented", "x-contract-version": "0.4.0",
-               "x-services": {"ProfileDraft": "local deterministic extraction with validated source spans",
+               "x-implementation-status": "implemented", "x-contract-version": "0.4.1",
+               "x-services": {"ProfileDraft": "local extraction or separately consented Groq structuring, with exact validated PDF spans",
+                              "GroqProfileDraft": "strict text-only section/span selection; contacts stay local and every model span is grounded",
                               "StructuredJD": "local reviewed skill vocabulary with JD evidence",
                               "TailoredContent": "consent-gated Groq wording plus deterministic verification",
                               "VerificationResult": "Groq semantic review and fail-closed publication checks"}})

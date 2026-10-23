@@ -124,6 +124,25 @@
       "title": "GeneratedClaim",
       "type": "object"
     },
+    "GroqProfileDraft": {
+      "additionalProperties": false,
+      "properties": {
+        "facts": {
+          "items": {
+            "$ref": "#/$defs/StructuredProfileFact"
+          },
+          "maxItems": 80,
+          "minItems": 1,
+          "title": "Facts",
+          "type": "array"
+        }
+      },
+      "required": [
+        "facts"
+      ],
+      "title": "GroqProfileDraft",
+      "type": "object"
+    },
     "JsonValue": {},
     "ProfileDraft": {
       "additionalProperties": false,
@@ -372,6 +391,34 @@
       "title": "StructuredJD",
       "type": "object"
     },
+    "StructuredProfileFact": {
+      "additionalProperties": false,
+      "properties": {
+        "kind": {
+          "enum": [
+            "summary",
+            "skills",
+            "education",
+            "projects",
+            "experience",
+            "certifications",
+            "achievements",
+            "other"
+          ],
+          "title": "Kind",
+          "type": "string"
+        },
+        "source_ref": {
+          "$ref": "#/$defs/SourceSpan"
+        }
+      },
+      "required": [
+        "kind",
+        "source_ref"
+      ],
+      "title": "StructuredProfileFact",
+      "type": "object"
+    },
     "TailoredContent": {
       "additionalProperties": false,
       "properties": {
@@ -441,10 +488,11 @@
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "description": "Phase 4 evidence contracts with local extraction and verified Groq resume wording.",
   "title": "CareerLens AI contracts",
-  "x-contract-version": "0.4.0",
+  "x-contract-version": "0.4.1",
   "x-implementation-status": "implemented",
   "x-services": {
-    "ProfileDraft": "local deterministic extraction with validated source spans",
+    "GroqProfileDraft": "strict text-only section/span selection; contacts stay local and every model span is grounded",
+    "ProfileDraft": "local extraction or separately consented Groq structuring, with exact validated PDF spans",
     "StructuredJD": "local reviewed skill vocabulary with JD evidence",
     "TailoredContent": "consent-gated Groq wording plus deterministic verification",
     "VerificationResult": "Groq semantic review and fail-closed publication checks"

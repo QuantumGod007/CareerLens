@@ -25,6 +25,7 @@ class FactView(View):
     text: str
     provenance: Literal["extracted", "user"]
     source_ref: SourceSpan | None
+    extraction_method: Literal['local','groq','user'] = 'local'
 
 
 class ProfileSummary(View):
@@ -36,10 +37,22 @@ class ProfileSummary(View):
     created_at: datetime
 
 
+class ProfileParsing(View):
+    requested_mode: Literal['local','groq'] = 'local'
+    mode: Literal['local','groq','local_fallback'] = 'local'
+    provider: Literal['groq','controlled_fixture'] | None = None
+    model: Literal['openai/gpt-oss-120b','openai/gpt-oss-20b'] | None = None
+    error_code: str | None = None
+    consent_version: str | None = None
+    prompt_version: str | None = None
+    schema_version: str = 'profile-v1'
+
+
 class ProfileView(ProfileSummary):
     facts: list[FactView]
     pages: list[PageText]
     warnings: list[str]
+    parsing: ProfileParsing = Field(default_factory=ProfileParsing)
 
 
 class FactEdit(StrictCommand):
@@ -179,7 +192,7 @@ class ResumeContent(View):
 
 class ProviderDiagnostic(View):
     model: Literal["openai/gpt-oss-120b", "openai/gpt-oss-20b"]
-    purpose: Literal["DRAFT", "VERIFY", "REPAIR", "VERIFY_REPAIR"]
+    purpose: Literal["DRAFT", "VERIFY", "REPAIR", "VERIFY_REPAIR", "PROFILE"]
     http_status: int
     headers: dict[str, str]
     limiting_factor: str

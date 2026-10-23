@@ -19,6 +19,21 @@ SECTIONS = {
     "summary": ("summary", "profile", "objective", "professional summary"),
 }
 
+PDF_FEATURE_ERRORS = {
+    'PDF_JAVASCRIPT_ACTION': 'This PDF contains JavaScript. Export a text PDF with scripts disabled.',
+    'PDF_LAUNCH_ACTION': 'This PDF can launch an application or file. Export it without launch actions.',
+    'PDF_EXTERNAL_FILE_ACTION': 'This PDF opens another file or embedded document. Export it without external-file actions.',
+    'PDF_AUTOMATIC_EXTERNAL_ACTION': 'This PDF automatically opens an external link. Disable automatic link actions; normal clickable web links are supported.',
+    'PDF_UNSAFE_LINK_ACTION': 'This PDF has a link using an unsupported protocol. Use ordinary web, email or phone links.',
+    'PDF_EMBEDDED_FILES': 'This PDF contains attached or embedded files. Export the resume without attachments.',
+    'PDF_XFA_CONTENT': 'This PDF contains an XFA interactive form. Export a standard text PDF.',
+    'PDF_INTERACTIVE_MEDIA': 'This PDF contains interactive media. Export a standard text PDF without media.',
+    'PDF_UNSUPPORTED_NAMED_ACTION': 'This PDF requests a viewer command beyond page navigation. Export it without interactive viewer commands.',
+    'PDF_UNSUPPORTED_ACTION': 'This PDF contains an unsupported interactive action. Export it as a standard text PDF with interactive actions disabled.',
+    'PDF_INVALID_DESTINATION': 'This PDF has an invalid page-navigation destination. Re-export it as a standard text PDF.',
+    'PDF_ACTION_LIMIT': 'This PDF has an excessively complex or cyclic action structure. Re-export it as a standard text PDF.',
+}
+
 
 def extract_pdf(content: bytes, *, max_pages=10):
     if len(content) > 5 * 1024 * 1024:
@@ -37,14 +52,15 @@ def extract_pdf(content: bytes, *, max_pages=10):
         raise DomainError("UNREADABLE_PDF", "The PDF could not be read safely.", 422) from None
     if payload.get("error"):
         code = payload["error"]
-        raise DomainError(code, "The PDF needs correction: use an unencrypted text-based PDF, at most 10 pages and 5 MiB. OCR is not applied.", 422)
+        raise DomainError(code, PDF_FEATURE_ERRORS.get(code, "The PDF needs correction: use an unencrypted text-based PDF, at most 10 pages and 5 MiB. OCR is not applied."), 422)
     return payload["pages"]
 
 
 def verify_span(pages, source):
     source = SourceSpan.model_validate(source) if isinstance(source, dict) else source
     page = next((page for page in pages if page["page"] == source.page), None)
-    return bool(page and page["text"][source.start_offset:source.end_offset] == source.source_text)
+    return bool(page and 0 <= source.start_offset < source.end_offset <= len(page['text'])
+                and page["text"][source.start_offset:source.end_offset] == source.source_text)
 
 
 def parse_profile(pages, namespace: UUID) -> ProfileDraft:
@@ -89,9 +105,13 @@ def parse_profile(pages, namespace: UUID) -> ProfileDraft:
                                     value=text, source_ref=source))
     if not facts or len(facts) > 200 or any(len(str(f.value)) > 4000 for f in facts):
         raise DomainError("PROFILE_TEXT_LIMIT", "This resume needs manual shortening before safe review.", 422)
+    warnings = ["Local extraction preserves individual source lines. Review wrapped bullets, section assignments and contact fields before confirming."]
+    return draft_from_facts(facts,warnings)
+
+
+def draft_from_facts(facts,warnings):
     by_kind = lambda kind: [str(f.value) for f in facts if f.kind == kind]
     contact = {kind: next(iter(by_kind(kind)), None) for kind in ("name", "email", "phone", "links")}
-    warnings = ["Local extraction preserves individual source lines. Review wrapped bullets, section assignments and contact fields before confirming."]
     warnings += [f"{kind.capitalize()} not identified; add it explicitly if appropriate." for kind in ("name", "email") if not contact[kind]]
     return ProfileDraft(contact=contact, education=by_kind("education"), skills=by_kind("skills"),
         projects=by_kind("projects"), experience=by_kind("experience"),

@@ -1,7 +1,8 @@
 from typing import Annotated
 from uuid import UUID
+from typing import Literal
 
-from fastapi import APIRouter, Depends, File, Header, Path, Query, Request, Response, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, Path, Query, Request, Response, UploadFile
 from sqlalchemy import select
 
 from app.core.errors import DomainError
@@ -24,7 +25,9 @@ def correlation(request):
 
 
 @router.post('/profiles',status_code=202,response_model=TaskReference)
-async def upload_profile(request: Request, idempotency_key: Key, owner: Owner, resume: UploadFile=File()):
+async def upload_profile(request: Request, idempotency_key: Key, owner: Owner, resume: UploadFile=File(),
+                         parsing_mode: Literal['local','groq']=Form('local'), ai_consent: bool=Form(False),
+                         consent_version: Literal['groq-profile-v1'] | None=Form(None)):
     try:
         content=await resume.read(5*1024*1024+1)
     finally:
@@ -34,7 +37,8 @@ async def upload_profile(request: Request, idempotency_key: Key, owner: Owner, r
     if not content.startswith(b'%PDF-'):
         raise DomainError('UNREADABLE_PDF','Choose an actual text-based PDF.',415)
     from starlette.concurrency import run_in_threadpool
-    return await run_in_threadpool(studio.upload,request.app.state.database,owner,correlation(request),idempotency_key,content)
+    return await run_in_threadpool(studio.upload,request.app.state.database,owner,correlation(request),idempotency_key,content,
+                                  parsing_mode=parsing_mode,ai_consent=ai_consent,consent_version=consent_version)
 
 
 @router.get('/profiles',response_model=list[ProfileSummary])

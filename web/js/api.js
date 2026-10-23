@@ -59,7 +59,9 @@ const validators = {
   references: v => Array.isArray(v) && v.every(reference),
   profiles: v => Array.isArray(v) && v.every(profileSummary),
   profile: v => profileSummary(v) && Array.isArray(v.facts) && v.facts.every(fact) && Array.isArray(v.pages)
-    && v.pages.every(p => object(p) && number(p.page) && text(p.text)) && Array.isArray(v.warnings) && v.warnings.every(text),
+    && v.pages.every(p => object(p) && number(p.page) && text(p.text)) && Array.isArray(v.warnings) && v.warnings.every(text)
+    && object(v.parsing) && ['local','groq','local_fallback'].includes(v.parsing.mode)
+    && ['local','groq'].includes(v.parsing.requested_mode),
   search,
   searches: v => Array.isArray(v) && v.every(search),
   analysis: v => object(v) && uuid(v.id) && uuid(v.profile_version_id) && uuid(v.job_snapshot_id) && text(v.job_title)

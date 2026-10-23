@@ -7,7 +7,7 @@ from email.utils import parsedate_to_datetime
 from sqlalchemy import func, select
 
 from app.core.errors import DomainError
-from app.persistence.models import ResumeGeneration
+from app.persistence.models import ResumeGeneration, Task
 
 HEADERS = ('x-ratelimit-limit-requests', 'x-ratelimit-limit-tokens',
            'x-ratelimit-remaining-requests', 'x-ratelimit-remaining-tokens',
@@ -81,7 +81,9 @@ def fallback_reason(report, model, input_bytes, output_budget):
 
 
 def check_cooldown(session):
-    deadline = session.scalar(select(func.max(ResumeGeneration.stage_json['retry_not_before'].as_string())))
+    deadlines = [session.scalar(select(func.max(ResumeGeneration.stage_json['retry_not_before'].as_string()))),
+                 session.scalar(select(func.max(Task.input_json['ai']['retry_not_before'].as_string())).where(Task.kind=='resume_parse'))]
+    deadline = max((value for value in deadlines if value),default=None)
     if deadline:
         try:
             remaining = (datetime.fromisoformat(deadline) - datetime.now(timezone.utc)).total_seconds()

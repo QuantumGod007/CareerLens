@@ -30,14 +30,14 @@ def studio_browser():
 
 
 @pytest.fixture
-def studio_ui(settings,database,client,headers,studio_browser):
+def studio_ui(settings,database,client,headers,studio_browser,request):
     persisted_jobs(client,headers,database,3)
     listener=socket.socket();listener.bind(('127.0.0.1',0));listener.listen(128)
     origin=f'http://127.0.0.1:{listener.getsockname()[1]}'
     local=settings.model_copy(update={'allowed_origins':(origin,)})
     server=uvicorn.Server(uvicorn.Config(create_app(local),log_level='error',access_log=False,proxy_headers=False))
     thread=threading.Thread(target=server.run,kwargs={'sockets':[listener]},daemon=True);thread.start()
-    worker=multiprocessing.get_context('spawn').Process(target=run_worker,args=(local.model_dump(mode='json'),))
+    worker=multiprocessing.get_context('spawn').Process(target=run_worker,args=(local.model_dump(mode='json'),getattr(request,'param',None)))
     worker.start()
     deadline=time.monotonic()+10
     ready=False
@@ -215,3 +215,39 @@ def test_browser_generation_failure_never_exposes_a_pdf(studio_ui,resume_pdf,dat
     expect(page.locator('#generation-result')).to_contain_text('rate limited' if code.startswith('RATE') else 'blocked this document',timeout=15000)
     expect(page.get_by_role('link',name='Download tailored PDF',exact=True)).to_have_count(0)
     expect(page.locator('#generation-result img')).to_have_count(0)
+
+
+@pytest.mark.parametrize('feature',['open_destination','javascript'])
+def test_browser_navigation_pdf_upload_and_specific_executable_error(studio_ui,resume_pdf,feature):
+    from .test_pdf_actions import action_pdf
+    page,_=studio_ui
+    content=action_pdf(resume_pdf,feature)
+    page.locator('#resume-file').set_input_files({'name':'synthetic-navigation.pdf','mimeType':'application/pdf','buffer':content})
+    page.locator('#upload-resume').click()
+    if feature=='open_destination':
+        expect(page.locator('#profile-status')).to_have_text('Needs review',timeout=20000)
+        expect(page.locator('#profile-parsing-note')).to_contain_text('Local-only extraction')
+    else:
+        expect(page.locator('#studio-progress')).to_contain_text('contains JavaScript',timeout=15000)
+        expect(page.locator('#profile-review')).to_be_hidden()
+
+
+@pytest.mark.parametrize('studio_ui',[None,'RATE_LIMIT_OR_QUOTA_EXHAUSTED'],indirect=True)
+def test_browser_profile_ai_consent_and_honest_mode(studio_ui,resume_pdf,request):
+    page,_=studio_ui
+    page.locator('#resume-file').set_input_files({'name':'synthetic.pdf','mimeType':'application/pdf','buffer':resume_pdf})
+    expect(page.locator('#profile-parsing-mode')).to_have_value('local')
+    page.locator('#profile-parsing-mode').select_option('groq')
+    expect(page.locator('#upload-resume')).to_be_disabled()
+    expect(page.locator('#profile-ai-consent-box')).to_contain_text('never PDF bytes')
+    expect(page.locator('#profile-ai-consent-box')).to_contain_text('Other personal details')
+    page.locator('#profile-ai-consent').check()
+    page.locator('#upload-resume').click()
+    expect(page.locator('#profile-status')).to_have_text('Needs review',timeout=20000)
+    if request.node.callspec.params['studio_ui']:
+        expect(page.locator('#profile-parsing-note')).to_contain_text('Local-only extraction · AI unavailable')
+        expect(page.locator('#profile-warnings')).to_contain_text('No model facts were accepted')
+    else:
+        expect(page.locator('#profile-parsing-note')).to_contain_text('Controlled AI fixture')
+        expect(page.locator('#profile-facts')).to_contain_text('Groq structured · exact source')
+    expect(page.locator('#find-matches')).to_be_disabled()

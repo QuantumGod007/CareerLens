@@ -9,6 +9,8 @@
 .resume-drop p,.studio-footnote { font-size:11px; color:var(--muted); margin:13px 0 0; }
 .resume-drop input { padding:0; border:0; background:transparent; min-height:28px; font-size:11px; }
 #resume-file-state { margin:14px 0; overflow-wrap:anywhere; }
+#profile-parsing-mode { margin-bottom:16px; }
+#profile-parsing-note { font-size:11px; overflow-wrap:anywhere; line-height:1.7; }
 .studio-progress { margin-bottom:24px; background:var(--lavender); border-color:#d7d3ef; }
 .studio-progress progress { width:100%; height:7px; accent-color:var(--violet); }
 .studio-progress p { font-size:12px; margin:8px 0 0; }

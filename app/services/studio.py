@@ -73,12 +73,14 @@ def facts_view(session, profile_id):
     rows = list(session.scalars(select(Fact).where(Fact.profile_version_id == profile_id).order_by(Fact.created_at, Fact.id)))
     rows.sort(key=lambda row:(row.value_json.get('order', 0),row.created_at,str(row.id)))
     return [{'id': str(f.id), 'stable_id': f.value_json.get('stable_id', str(f.id)), 'kind': f.kind,
-             'text': f.value_json['text'], 'provenance': f.provenance, 'source_ref': f.source_ref} for f in rows]
+             'text': f.value_json['text'], 'provenance': f.provenance, 'source_ref': f.source_ref,
+             'extraction_method':f.value_json.get('extraction_method','user' if f.provenance=='user' else 'local')} for f in rows]
 
 
 def profile_view(session, row):
     return {**ProfileSummary.model_validate(row).model_dump(), 'facts': facts_view(session, row.id),
-            'pages': row.profile_json.get('pages', []), 'warnings': row.profile_json.get('warnings', [])}
+            'pages': row.profile_json.get('pages', []), 'warnings': row.profile_json.get('warnings', []),
+            'parsing':row.profile_json.get('parsing',{'requested_mode':'local','mode':'local'})}
 
 
 def search_view(session, row):
@@ -148,10 +150,17 @@ def enqueue(session, owner, correlation, kind, entity_type, entity_id, business=
     return {'task_id': str(task.id), 'entity_type': task.entity_type, 'entity_id': str(task.entity_id), 'status_url': f'/api/v1/tasks/{task.id}'}
 
 
-def upload(database, owner, correlation, key, content):
+def upload(database, owner, correlation, key, content, *, parsing_mode='local',ai_consent=False,consent_version=None):
+    from app.services.profile_structuring import CONSENT as PROFILE_CONSENT
+    if parsing_mode not in ('local','groq'):
+        raise DomainError('VALIDATION_ERROR','Choose local or Groq profile extraction.',422)
+    if parsing_mode=='groq' and (not ai_consent or consent_version!=PROFILE_CONSENT):
+        raise DomainError('AI_PROFILE_CONSENT_REQUIRED','Explicit consent to text-only Groq profile structuring is required.',400)
     digest = hashlib.sha256(content).hexdigest()
+    payload={'sha256':digest}
+    if parsing_mode=='groq':payload.update(parsing_mode='groq',consent_version=PROFILE_CONSENT)
     with database.read() as session:
-        previous = previous_response(session, owner, '/api/v1/profiles', key, canonical_hash({'sha256': digest}))
+        previous = previous_response(session, owner, '/api/v1/profiles', key, canonical_hash(payload))
         if previous is not None:
             return previous
     store = ArtifactStore(database)
@@ -159,14 +168,17 @@ def upload(database, owner, correlation, key, content):
     upload_id = uuid4()
     def create(session):
         person = candidate(session, owner)
+        metadata={'parsing_mode':parsing_mode}
+        if parsing_mode=='groq':metadata.update(consent_version=PROFILE_CONSENT,consent_at=utcnow().isoformat())
         reference = enqueue(session, owner, correlation, 'resume_parse', 'resume_upload', upload_id,
-                            f'parse:{person.id}:{digest}')
+                            f'parse:{person.id}:{digest}'+(':groq:'+PROFILE_CONSENT if parsing_mode=='groq' else ''),payload=metadata)
         if reference['entity_id'] == str(upload_id):
             session.add(ResumeUpload(id=upload_id, candidate_id=person.id, artifact_id=artifact.id,
                                     task_id=UUID(reference['task_id']), state='QUEUED'))
+            if parsing_mode=='groq':append_event(session,'task',UUID(reference['task_id']),correlation,'GROQ_PROFILE_CONSENT',mode='groq')
         return reference
     try:
-        result = command(database, owner, '/api/v1/profiles', key, {'sha256': digest}, create, 202)
+        result = command(database, owner, '/api/v1/profiles', key, payload, create, 202)
     except BaseException:
         with database.write() as session:
             session.delete(session.get(Artifact, artifact.id))
@@ -193,23 +205,24 @@ def correct_profile(session, owner, profile_id, edits, correlation):
             if key not in values or key in seen:
                 raise DomainError('INVALID_FACT', 'Correct each fact from this profile at most once.', 422)
             seen.add(key)
-            values[key] = {**values[key], 'kind': edit.kind, 'text': edit.text.strip(), 'provenance': 'user', 'source_ref': None}
+            values[key] = {**values[key], 'kind': edit.kind, 'text': edit.text.strip(), 'provenance': 'user', 'source_ref': None,'extraction_method':'user'}
         else:
             identifier = str(uuid4())
             values[identifier] = {'id': identifier, 'stable_id': identifier, 'kind': edit.kind,
-                'text': edit.text.strip(), 'provenance': 'user', 'source_ref': None}
+                'text': edit.text.strip(), 'provenance': 'user', 'source_ref': None,'extraction_method':'user'}
     if len(values) > 200 or sum(len(f['text']) for f in values.values()) > 80000 or any(not f['text'] for f in values.values()):
         raise DomainError('PROFILE_TEXT_LIMIT', 'Keep the profile within 200 facts and 80,000 characters.', 422)
     grouped = {kind:[f['text'] for f in values.values() if f['kind']==kind] for kind in ('skills','education','projects','experience')}
     contact = {kind:next((f['text'] for f in values.values() if f['kind']==kind),None) for kind in ('name','email','phone','links')}
     row = ProfileVersion(id=uuid4(), candidate_id=old.candidate_id, version=old.version+1,
         source_artifact_id=old.source_artifact_id, profile_json={**grouped,'contact':contact,'pages':old.profile_json.get('pages',[]),
-            'schema_version':'profile-v1','warnings':['Candidate corrections require fresh confirmation.']})
+            'schema_version':'profile-v1','warnings':['Candidate corrections require fresh confirmation.'],
+            'parsing':old.profile_json.get('parsing',{'requested_mode':'local','mode':'local'})})
     session.add(row); session.flush()
     for index,fact in enumerate(values.values()):
         identifier = uuid5(row.id, fact['stable_id'])
         session.add(Fact(id=identifier, profile_version_id=row.id, kind=fact['kind'],
-            value_json={'text': fact['text'], 'stable_id': fact['stable_id'],'order':index}, provenance=fact['provenance'], source_ref=fact['source_ref']))
+            value_json={'text': fact['text'], 'stable_id': fact['stable_id'],'order':index,'extraction_method':fact['extraction_method']}, provenance=fact['provenance'], source_ref=fact['source_ref']))
     append_event(session, 'profile', row.id, correlation, 'CORRECTED', revision=1, count=len(values))
     session.flush()
     return profile_view(session, row)

@@ -129,7 +129,7 @@ def test_active_pdf_content_is_rejected(resume_pdf, active):
     from app.core.errors import DomainError
     with pytest.raises(DomainError) as error:
         extract_pdf(output.getvalue())
-    assert error.value.code == 'UNSUPPORTED_PDF_CONTENT'
+    assert error.value.code == ('PDF_JAVASCRIPT_ACTION' if active=='javascript' else 'PDF_EMBEDDED_FILES')
 
 
 def test_generated_pdf_preview_checks_ownership_and_hash(client, headers, database, selected):

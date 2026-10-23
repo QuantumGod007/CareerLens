@@ -18,6 +18,18 @@ const GUIDANCE = {
   NO_EXTRACTABLE_TEXT:'This PDF has no extractable text. Use a text-based PDF; OCR is not applied.',
   ENCRYPTED_PDF:'Encrypted PDFs are not supported. Export an unencrypted text PDF.',
   TOO_MANY_PAGES:'The PDF exceeds 10 pages.',
+  PDF_JAVASCRIPT_ACTION:'This PDF contains JavaScript. Export a text PDF with scripts disabled.',
+  PDF_LAUNCH_ACTION:'This PDF can launch an application or file. Export it without launch actions.',
+  PDF_EXTERNAL_FILE_ACTION:'This PDF opens another file or embedded document. Export it without external-file actions.',
+  PDF_AUTOMATIC_EXTERNAL_ACTION:'This PDF automatically opens an external link. Disable automatic link actions; normal clickable web links are supported.',
+  PDF_UNSAFE_LINK_ACTION:'This PDF uses an unsupported link protocol. Use ordinary web, email or phone links.',
+  PDF_EMBEDDED_FILES:'This PDF contains attached or embedded files. Export the resume without attachments.',
+  PDF_XFA_CONTENT:'This PDF contains an XFA interactive form. Export a standard text PDF.',
+  PDF_INTERACTIVE_MEDIA:'This PDF contains interactive media. Export a standard text PDF without media.',
+  PDF_UNSUPPORTED_NAMED_ACTION:'This PDF requests a viewer command beyond page navigation. Export it without interactive viewer commands.',
+  PDF_UNSUPPORTED_ACTION:'This PDF contains an unsupported interactive action. Export a standard text PDF with interactive actions disabled.',
+  PDF_INVALID_DESTINATION:'This PDF has an invalid page destination. Re-export it as a standard text PDF.',
+  PDF_ACTION_LIMIT:'This PDF has an excessively complex or cyclic action structure. Re-export it as a standard text PDF.',
   PDF_TOO_LARGE:'Choose a PDF no larger than 5 MiB.',
   UNREADABLE_PDF:'The PDF is corrupt or unreadable. Export a fresh text-based PDF.',
 };
@@ -37,8 +49,13 @@ export function createStudio({connected, notify, error, follow}) {
   function active(kind) { return [...state.active.values()].some(task => task.kind === kind && !terminal(task)); }
   function actions() {
     const usable = connected() && !state.busy;
-    $('upload-resume').disabled = !usable || !state.file || active('resume_parse');
-    $('resume-file').disabled = !usable || active('resume_parse');
+    const pendingUpload=state.pending?.path==='/api/v1/profiles';
+    const ai=$('profile-parsing-mode').value==='groq';
+    $('profile-ai-consent-box').hidden=!ai;
+    $('profile-parsing-mode').disabled=!usable || active('resume_parse') || pendingUpload;
+    $('profile-ai-consent').disabled=!usable || active('resume_parse') || pendingUpload;
+    $('upload-resume').disabled = !usable || !state.file || active('resume_parse') || pendingUpload || (ai && !$('profile-ai-consent').checked);
+    $('resume-file').disabled = !usable || active('resume_parse') || pendingUpload;
     $('profile-version').disabled = !usable || !state.profiles.length || state.dirty;
     $('save-profile').disabled = !usable || !current() || !state.dirty;
     $('confirm-profile').disabled = !usable || !current() || state.dirty || Boolean(state.profile?.confirmed_at);
@@ -146,7 +163,7 @@ export function createStudio({connected, notify, error, follow}) {
     area.addEventListener('input',markDirty);select.addEventListener('change',markDirty);
     const source=fact.source_ref;
     const evidence=source ? node('details',{class:'fact-source'},node('summary',{},`Extracted · Page ${source.page} · offsets ${source.start_offset}–${source.end_offset}`),
-      node('blockquote',{},source.source_text),node('code',{},`Fact ${fact.id}`))
+      node('blockquote',{},source.source_text),node('code',{},`${fact.extraction_method==='groq'?'Groq structured · exact source':'Local extraction'} · Fact ${fact.id}`))
       : node('p',{class:'fact-source'},addition ? 'Explicit user addition · requires confirmation' : 'Explicit user fact · source PDF text is retained separately');
     if (!current()) {area.disabled=true;select.disabled=true;}
     return node('div',{class:'fact-editor'},node('label',{for:id},`${words(fact.kind)} · ${index+1}`),node('div',{class:'fact-controls'},select,area),evidence);
@@ -157,6 +174,11 @@ export function createStudio({connected, notify, error, follow}) {
     if (!profile) return;
     $('profile-status').replaceWith(Object.assign(pill(profile.confirmed_at ? 'Confirmed' : 'Needs review',profile.confirmed_at?'good':'warning'),{id:'profile-status'}));
     $('profile-version-note').textContent=`Version ${profile.version} · revision ${profile.revision}${current() ? ' · latest version' : ' · historical version; select the latest to edit or generate'}`;
+    const parsing=profile.parsing;
+    $('profile-parsing-note').textContent=parsing?.mode==='groq'
+      ? `${parsing.provider==='controlled_fixture'?'Controlled AI fixture':'Groq structured profile'} · ${parsing.model} · Every fact was checked against exact PDF text; contact extraction stayed local.`
+      : parsing?.mode==='local_fallback' ? `Local-only extraction · AI unavailable or evidence rejected (${parsing.error_code}). No model facts were accepted.`
+        : 'Local-only extraction · No Groq call was made for profile parsing.';
     $('profile-links').replaceChildren(...(profile.source_artifact_id ? [node('a',{class:'small-link',href:`/api/v1/artifacts/${profile.source_artifact_id}`,download:'original-resume.pdf'},'Download original PDF ↗')] : []));
     $('profile-warnings').replaceChildren(...profile.warnings.map(warning => node('p',{},warning)));
     $('profile-facts').replaceChildren(...KINDS.filter(kind => profile.facts.some(fact=>fact.kind===kind)).map(kind => {
@@ -326,6 +348,7 @@ export function createStudio({connected, notify, error, follow}) {
 
   function selectFile(file) {
     if (!file) return;
+    $('profile-ai-consent').checked=false;
     state.file=null;
     if (file.size>5*1024*1024) {$('resume-file-state').textContent=GUIDANCE.PDF_TOO_LARGE;actions();return;}
     if (!file.name.toLowerCase().endsWith('.pdf')) {$('resume-file-state').textContent='Choose a PDF. The server also validates actual bytes.';actions();return;}
@@ -336,7 +359,16 @@ export function createStudio({connected, notify, error, follow}) {
   $('resume-drop').addEventListener('dragenter',()=>$('resume-drop').classList.add('dragging'));
   $('resume-drop').addEventListener('dragleave',()=>$('resume-drop').classList.remove('dragging'));
   $('resume-drop').addEventListener('drop',event=>{$('resume-drop').classList.remove('dragging');if(!active('resume_parse'))selectFile(event.dataTransfer.files[0]);});
-  $('resume-upload-form').addEventListener('submit',event=>{event.preventDefault();if (!state.file || active('resume_parse'))return;const data=new FormData();data.append('resume',state.file);notify('Uploading PDF for local validation…');mutate('/api/v1/profiles',data);});
+  $('profile-parsing-mode').addEventListener('change',()=>{$('profile-ai-consent').checked=false;actions();});
+  $('profile-ai-consent').addEventListener('change',actions);
+  $('resume-upload-form').addEventListener('submit',event=>{
+    event.preventDefault();if (!state.file || active('resume_parse'))return;
+    const mode=$('profile-parsing-mode').value;
+    if (mode==='groq' && !$('profile-ai-consent').checked)return;
+    const data=new FormData();data.append('resume',state.file);data.append('parsing_mode',mode);
+    if (mode==='groq') {data.append('ai_consent','true');data.append('consent_version','groq-profile-v1');}
+    notify('Uploading PDF for local validation…');mutate('/api/v1/profiles',data);
+  });
   $('profile-version').addEventListener('change',()=>chooseProfile($('profile-version').value).catch(problem=>handle(problem,load)));
   $('new-fact-kind').replaceChildren(...KINDS.map(kind=>node('option',{value:kind,...(kind==='skills'?{selected:''}:{})},words(kind))));
   $('add-fact').addEventListener('click',()=>{
@@ -371,6 +403,7 @@ export function createStudio({connected, notify, error, follow}) {
     state.epoch++;state.profile=null;state.profiles=[];state.search=null;state.analysis=null;state.generation=null;state.generations=[];
     state.active.clear();state.dirty=false;state.additions=[];state.file=null;state.pending=null;state.busy=false;
     $('resume-file').value='';$('resume-file-state').textContent='No file selected.';$('groq-consent').checked=false;
+    $('profile-ai-consent').checked=false;$('profile-parsing-mode').value='local';$('profile-parsing-note').textContent='';
     for (const id of ['profile-review','job-analysis','tailoring-panel','studio-progress']) $(id).hidden=true;
     for (const id of ['profile-facts','profile-source','profile-links','generation-result','match-results','role-decision']) $(id).replaceChildren();
     $('profile-status').textContent='No profile loaded';renderVersionOptions();renderHistoryOptions();actions();

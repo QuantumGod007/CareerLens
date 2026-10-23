@@ -34,14 +34,11 @@ def parse(data, max_pages=10):
         for page in reader.pages:
             if len(page.extract_text()) > MAX_TEXT:
                 return {"error": "PDF_TEXT_LIMIT"}
-        # Reject active content and embedded files; the original PDF is never rendered as a web page.
-        root = reader.trailer["/Root"]
-        names = root.get("/Names", {})
-        names = names.get_object() if hasattr(names,"get_object") else names
-        if (any(key in root for key in ("/OpenAction", "/AA"))
-                or any(key in names for key in ("/JavaScript","/EmbeddedFiles"))
-                or any('/AA' in page for page in reader.pages)):
-            return {"error": "UNSUPPORTED_PDF_CONTENT"}
+        from app.tools.pdf_actions import inspect_actions, UnsupportedFeature
+        try:
+            inspect_actions(reader)
+        except UnsupportedFeature as error:
+            return {"error": error.code}
         pages, total = [], 0
         with pdfplumber.open(io.BytesIO(data)) as document:
             for index, page in enumerate(document.pages, 1):

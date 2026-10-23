@@ -248,6 +248,32 @@
       },
       "Body_upload_profile_api_v1_profiles_post": {
         "properties": {
+          "ai_consent": {
+            "default": false,
+            "title": "Ai Consent",
+            "type": "boolean"
+          },
+          "consent_version": {
+            "anyOf": [
+              {
+                "const": "groq-profile-v1",
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Version"
+          },
+          "parsing_mode": {
+            "default": "local",
+            "enum": [
+              "local",
+              "groq"
+            ],
+            "title": "Parsing Mode",
+            "type": "string"
+          },
           "resume": {
             "contentMediaType": "application/octet-stream",
             "title": "Resume",
@@ -562,6 +588,16 @@
       "FactView": {
         "additionalProperties": false,
         "properties": {
+          "extraction_method": {
+            "default": "local",
+            "enum": [
+              "local",
+              "groq",
+              "user"
+            ],
+            "title": "Extraction Method",
+            "type": "string"
+          },
           "id": {
             "format": "uuid",
             "title": "Id",
@@ -1183,6 +1219,100 @@
         "title": "PageText",
         "type": "object"
       },
+      "ProfileParsing": {
+        "additionalProperties": false,
+        "properties": {
+          "consent_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Consent Version"
+          },
+          "error_code": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Error Code"
+          },
+          "mode": {
+            "default": "local",
+            "enum": [
+              "local",
+              "groq",
+              "local_fallback"
+            ],
+            "title": "Mode",
+            "type": "string"
+          },
+          "model": {
+            "anyOf": [
+              {
+                "enum": [
+                  "openai/gpt-oss-120b",
+                  "openai/gpt-oss-20b"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Model"
+          },
+          "prompt_version": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Prompt Version"
+          },
+          "provider": {
+            "anyOf": [
+              {
+                "enum": [
+                  "groq",
+                  "controlled_fixture"
+                ],
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "title": "Provider"
+          },
+          "requested_mode": {
+            "default": "local",
+            "enum": [
+              "local",
+              "groq"
+            ],
+            "title": "Requested Mode",
+            "type": "string"
+          },
+          "schema_version": {
+            "default": "profile-v1",
+            "title": "Schema Version",
+            "type": "string"
+          }
+        },
+        "title": "ProfileParsing",
+        "type": "object"
+      },
       "ProfileResult": {
         "additionalProperties": false,
         "properties": {
@@ -1306,6 +1436,9 @@
             "title": "Pages",
             "type": "array"
           },
+          "parsing": {
+            "$ref": "#/components/schemas/ProfileParsing"
+          },
           "revision": {
             "title": "Revision",
             "type": "integer"
@@ -1412,7 +1545,8 @@
               "DRAFT",
               "VERIFY",
               "REPAIR",
-              "VERIFY_REPAIR"
+              "VERIFY_REPAIR",
+              "PROFILE"
             ],
             "title": "Purpose",
             "type": "string"
@@ -2581,7 +2715,7 @@
   "info": {
     "description": "Local job discovery, confirmed profiles, evidence-based matching and verified private resume PDFs. No employer submission API.",
     "title": "CareerLens local workspace",
-    "version": "0.4.0"
+    "version": "0.4.1"
   },
   "openapi": "3.1.0",
   "paths": {

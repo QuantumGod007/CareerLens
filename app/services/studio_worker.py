@@ -1,6 +1,6 @@
 """Worker handlers: expensive parsing, model calls and rendering never hold write transactions."""
 import json
-from uuid import UUID, uuid4
+from uuid import UUID, uuid4, uuid5
 
 from sqlalchemy import func, select
 
@@ -29,16 +29,18 @@ def parse_resume(worker, task):
     content=ArtifactStore(db).read(artifact_id,task.session_id)
     pages=extract_pdf(content)
     queue.progress(task.id,'EXTRACTING_SOURCED_FACTS',55)
-    profile_id=uuid4()
+    profile_id=uuid5(task.entity_id,'profile')
     draft=parse_profile(pages,profile_id)
+    from app.services.profile_structuring import structure_profile
+    draft,methods,parsing=structure_profile(worker,task,pages,draft,artifact_id,profile_id)
     def publish(session,current):
         version=(session.scalar(select(func.max(ProfileVersion.version)).where(ProfileVersion.candidate_id==person)) or 0)+1
         session.add(ProfileVersion(id=profile_id,candidate_id=person,version=version,source_artifact_id=artifact_id,
-            profile_json={**draft.model_dump(mode='json'),'pages':pages,'schema_version':'profile-v1'}))
+            profile_json={**draft.model_dump(mode='json'),'pages':pages,'schema_version':'profile-v1','parsing':parsing}))
         session.flush()
         for index,fact in enumerate(draft.facts):
             session.add(Fact(id=fact.id,profile_version_id=profile_id,kind=fact.kind,
-                value_json={'text':str(fact.value),'stable_id':str(fact.id),'order':index},provenance='extracted',
+                value_json={'text':str(fact.value),'stable_id':str(fact.id),'order':index,'extraction_method':methods[str(fact.id)]},provenance='extracted',
                 source_ref=fact.source_ref.model_dump(mode='json')))
         row=session.get(ResumeUpload,task.entity_id)
         row.state,row.profile_version_id='READY',profile_id
