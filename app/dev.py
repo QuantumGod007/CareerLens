@@ -41,14 +41,14 @@ def run(port: int = 8000) -> int:
         with database.read() as session:
             heartbeat = session.get(WorkerHeartbeat, 'primary')
             if heartbeat and heartbeat.running and heartbeat.lease_expires_at > utcnow():
-                print('A source worker already owns this workspace. Stop it before using the combined command.', file=sys.stderr)
+                print('A worker already owns this workspace. Stop it before using the combined command.', file=sys.stderr)
                 return 1
         worker = subprocess.Popen([sys.executable, '-m', 'app.worker'], cwd=ROOT,
                                   env=os.environ.copy(), start_new_session=True)
         deadline = time.monotonic() + 10
         while not stop.is_set() and time.monotonic() < deadline:
             if worker.poll() is not None:
-                print('The source worker could not start. See the terminal message above.', file=sys.stderr)
+                print('The worker could not start. See the terminal message above.', file=sys.stderr)
                 return 1
             with database.read() as session:
                 heartbeat = session.get(WorkerHeartbeat, 'primary')
@@ -67,7 +67,7 @@ def run(port: int = 8000) -> int:
         def watch():
             while not stop.wait(0.2):
                 if worker.poll() is not None:
-                    print('Source worker stopped unexpectedly; shutting down CareerLens.', file=sys.stderr)
+                    print('Worker stopped unexpectedly; shutting down CareerLens.', file=sys.stderr)
                     stop.set()
             server.should_exit = True
 
@@ -81,7 +81,7 @@ def run(port: int = 8000) -> int:
         if worker and worker.poll() is None:
             worker.send_signal(signal.SIGTERM)
             try:
-                worker.wait(timeout=40)  # Finish the bounded public source read.
+                worker.wait(timeout=40)  # Let the current bounded task finish before shutdown.
             except subprocess.TimeoutExpired:
                 worker.kill()
                 worker.wait()

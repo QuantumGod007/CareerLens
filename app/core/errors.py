@@ -1,4 +1,5 @@
 from __future__ import annotations
+import math
 
 from fastapi import FastAPI, Request
 from fastapi.exceptions import RequestValidationError
@@ -8,9 +9,10 @@ from starlette.exceptions import HTTPException
 
 
 class DomainError(Exception):
-    def __init__(self, code: str, message: str, status: int = 409, *, retryable: bool = False):
+    def __init__(self, code: str, message: str, status: int = 409, *, retryable: bool = False, retry_after: float | None = None):
         super().__init__(code)
         self.code, self.message, self.status, self.retryable = code, message, status, retryable
+        self.retry_after = retry_after
 
 
 def envelope(code: str, message: str, correlation_id: str, retryable: bool = False, details=None):
@@ -22,7 +24,9 @@ def handlers(app: FastAPI) -> None:
     @app.exception_handler(DomainError)
     async def domain(request: Request, error: DomainError):
         return JSONResponse(envelope(error.code, error.message, request.state.correlation_id,
-                                     error.retryable), status_code=error.status)
+                                     error.retryable, details={'retry_after_seconds': math.ceil(error.retry_after)} if error.retry_after else None),
+                            status_code=error.status,
+                            headers={'Retry-After': str(math.ceil(error.retry_after))} if error.retry_after else None)
 
     @app.exception_handler(RequestValidationError)
     async def validation(request: Request, error: RequestValidationError):

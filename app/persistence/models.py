@@ -122,6 +122,7 @@ class Search(IdentityMixin, Base):
     filters: Mapped[dict] = mapped_column(JSON)
     state: Mapped[str] = mapped_column(String(40))
     revision: Mapped[int] = mapped_column(Integer, default=1)
+    metadata_json: Mapped[dict] = mapped_column(JSON, default=dict)
 
 
 class SearchResult(Base):
@@ -137,6 +138,43 @@ class ResumeVersion(IdentityMixin, Base):
     pdf_artifact_id: Mapped[UUID] = mapped_column(ForeignKey("artifacts.id"))
     content_json: Mapped[dict] = mapped_column(JSON)
     pipeline_version: Mapped[str] = mapped_column(String(50))
+
+
+class ResumeUpload(IdentityMixin, Base):
+    __tablename__ = "resume_uploads"
+    candidate_id: Mapped[UUID] = mapped_column(ForeignKey("candidates.id"), index=True)
+    artifact_id: Mapped[UUID] = mapped_column(ForeignKey("artifacts.id"))
+    task_id: Mapped[UUID] = mapped_column(ForeignKey("tasks.id"), unique=True)
+    profile_version_id: Mapped[UUID | None] = mapped_column(ForeignKey("profile_versions.id"))
+    state: Mapped[str] = mapped_column(String(30), default="QUEUED")
+    error_code: Mapped[str | None] = mapped_column(String(80))
+
+
+class JobAnalysis(IdentityMixin, Base):
+    __tablename__ = "job_analyses"
+    search_id: Mapped[UUID] = mapped_column(ForeignKey("searches.id"), index=True)
+    profile_version_id: Mapped[UUID] = mapped_column(ForeignKey("profile_versions.id"))
+    job_snapshot_id: Mapped[UUID] = mapped_column(ForeignKey("job_snapshots.id"))
+    content_hash: Mapped[str] = mapped_column(String(64))
+    analysis_json: Mapped[dict] = mapped_column(JSON)
+    assessment_json: Mapped[dict] = mapped_column(JSON)
+    pipeline_version: Mapped[str] = mapped_column(String(50))
+
+
+class ResumeGeneration(IdentityMixin, Base):
+    __tablename__ = "resume_generations"
+    candidate_id: Mapped[UUID] = mapped_column(ForeignKey("candidates.id"), index=True)
+    profile_version_id: Mapped[UUID] = mapped_column(ForeignKey("profile_versions.id"))
+    analysis_id: Mapped[UUID] = mapped_column(ForeignKey("job_analyses.id"))
+    task_id: Mapped[UUID] = mapped_column(ForeignKey("tasks.id"), unique=True)
+    state: Mapped[str] = mapped_column(String(30), default="QUEUED")
+    consent_at: Mapped[datetime] = mapped_column(UTCDateTime())
+    consent_version: Mapped[str] = mapped_column(String(50))
+    input_hash: Mapped[str] = mapped_column(String(64))
+    stage_json: Mapped[dict] = mapped_column(JSON, default=dict)
+    verification_json: Mapped[dict | None] = mapped_column(JSON)
+    resume_version_id: Mapped[UUID | None] = mapped_column(ForeignKey("resume_versions.id"))
+    error_code: Mapped[str | None] = mapped_column(String(80))
 
 
 class Application(IdentityMixin, Base):
@@ -204,6 +242,7 @@ class Task(IdentityMixin, Base):
     heartbeat_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     possible_send_at: Mapped[datetime | None] = mapped_column(UTCDateTime())
     result_json: Mapped[dict | None] = mapped_column(JSON)
+    input_json: Mapped[dict] = mapped_column(JSON, default=dict)
     error_code: Mapped[str | None] = mapped_column(String(80))
     updated_at: Mapped[datetime] = mapped_column(UTCDateTime(), default=utcnow)
     finished_at: Mapped[datetime | None] = mapped_column(UTCDateTime())

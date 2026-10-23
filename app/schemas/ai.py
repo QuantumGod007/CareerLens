@@ -1,4 +1,4 @@
-"""Future AI contracts reconstructed from document 04; services are not implemented."""
+"""Evidence and bounded AI contracts used by the Phase 4 resume pipeline."""
 from typing import Literal
 from uuid import UUID
 
@@ -76,8 +76,8 @@ class ChangeRecord(StrictCommand):
 
 
 class TailoredContent(StrictCommand):
-    claims: list[GeneratedClaim]
-    changes: list[ChangeRecord]
+    claims: list[GeneratedClaim] = Field(max_length=8)
+    changes: list[ChangeRecord] = Field(max_length=8)
     selected_section_order: list[str]
 
 

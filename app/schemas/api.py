@@ -35,7 +35,7 @@ class ErrorEnvelope(View):
 
 class TaskReference(View):
     task_id: UUID
-    entity_type: Literal["source_board"]
+    entity_type: Literal["source_board", "resume_upload", "search", "job_analysis", "resume_generation"]
     entity_id: UUID
     status_url: str
 
@@ -48,6 +48,31 @@ class RefreshResult(View):
     reused_snapshots: int
     duplicates_removed: int
     data_origin: Literal["live", "fixture"]
+
+
+class ProfileResult(View):
+    entity_type: Literal["resume_upload"]
+    entity_id: UUID
+    profile_version_id: UUID
+
+
+class SearchTaskResult(View):
+    entity_type: Literal["search"]
+    entity_id: UUID
+    state: Literal["NEEDS_ROLE_DECISION", "COMPLETED"]
+    result_count: int
+
+
+class AnalysisResult(View):
+    entity_type: Literal["job_analysis"]
+    entity_id: UUID
+
+
+class ResumeResult(View):
+    entity_type: Literal["resume_generation"]
+    entity_id: UUID
+    resume_version_id: UUID
+    artifact_id: UUID
 
 
 class TaskView(View):
@@ -67,7 +92,7 @@ class TaskView(View):
     lease_expires_at: datetime | None
     heartbeat_at: datetime | None
     error_code: str | None
-    result: RefreshResult | None
+    result: RefreshResult | ProfileResult | SearchTaskResult | AnalysisResult | ResumeResult | None
     created_at: datetime
     updated_at: datetime
     finished_at: datetime | None

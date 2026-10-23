@@ -1,6 +1,6 @@
 # CareerLens
 
-CareerLens is a local job-search and application assistant for students and early-career candidates. It aims to bring job discovery, factual resume tailoring and reviewed applications into one workspace. Today, job discovery and source monitoring work; resume and application workflows are still planned.
+CareerLens is a local job-search and resume assistant for students and early-career candidates. Discover real jobs, review facts extracted from your PDF, and generate a verified resume for a selected role. Reviewed employer applications remain a future phase.
 
 ## What works
 
@@ -8,6 +8,9 @@ CareerLens is a local job-search and application assistant for students and earl
 - Stored jobs from Drivetrain’s public Lever feed, with search over loaded listings, type/location filters and incremental loading.
 - Job details and validated links to official employer pages.
 - Durable listing refreshes with idempotency, task progress, retries and event history.
+- Private PDF upload, traceable facts, immutable corrections and explicit profile confirmation.
+- Preferred-role searches, JD evidence and explainable required/preferred skill coverage.
+- Consented Groq wording, factual verification, private PDF preview/download and saved versions.
 - Automatic private browser sessions and one command to start the API and separate worker.
 
 ## Stack
@@ -24,7 +27,7 @@ source .venv/bin/activate
 python -m pip install --cache-dir data/pip-cache -r requirements.lock.txt
 ```
 
-The existing `.venv` on the development Mac can be reused. No external API key is needed for job discovery: Groq is not called by the website or source worker. If configuring it for an opt-in probe, use [.env.example](.env.example) and never overwrite an existing populated `.env`.
+The existing `.venv` on the development Mac can be reused. Discovery and local PDF extraction need no API key. AI wording uses the existing private `GROQ_API_KEY` in `.env`; see [.env.example](.env.example), and never overwrite a populated local file. Install Chromium once with the command under Tests; PDF rendering uses it too.
 
 ## Run locally
 
@@ -36,6 +39,8 @@ Open [CareerLens](http://127.0.0.1:8000/). The command safely initializes/upgrad
 
 See the [local operation guide](docs/backend/README.md) for configuration, sessions, manual API/worker commands, recovery and troubleshooting.
 
+In **Explore jobs**, refresh the source. In **Resume Studio**, upload a text PDF, correct and confirm its facts, enter your role and optional filters, then analyse a matching job. Review the Groq consent before generating; compare the wording and download the verified PDF. Originals remain unchanged.
+
 ## Tests
 
 Install the test browser once, then run the suite:
@@ -45,13 +50,15 @@ PLAYWRIGHT_BROWSERS_PATH="$PWD/data/playwright" .venv/bin/python -m playwright i
 .venv/bin/python -m pytest -q
 ```
 
-The baseline is **118 passing tests**, including 19 browser scenarios. Tests use isolated databases and synthetic/mocked data; live services are opt-in. See [validation commands and recorded results](docs/backend/README.md#tests-and-diagnostics) for live source demos, contract checks and credential scanning.
+The suite has **195 passing tests**, preserving the 118-test Phase 3 baseline. Tests use isolated databases and synthetic/mocked data; live services are opt-in. See [validation commands and recorded results](docs/backend/README.md#tests-and-diagnostics) for browser-to-PDF evidence, live source/model diagnostics, contract checks and credential scanning.
 
 ## Limitations and roadmap
 
-This is a single-user, loopback-only application with one configured job board and one worker. Filters cover loaded listings, not candidate matching. Stored postings may have closed; verify availability on the employer website. Details contain summary metadata; private artifacts remain API-only.
+This is a single-user, loopback-only application with one configured job board and one worker. Stored postings may have closed; verify availability on the employer website. Uploads are text PDFs up to 5 MiB/10 pages, with no OCR. Line-based extraction needs review. Matching uses a finite reviewed skill vocabulary; coverage is neither eligibility nor an ATS/hiring score. Wording changes are deliberately conservative and never add qualifications.
 
-Resume upload, profile confirmation, candidate matching, AI tailoring, PDF generation and reviewed application preparation/submission are planned. Generated claims must preserve confirmed candidate facts, missing answers require candidate input, and each real submission needs approval for its exact payload. Employer submission and CAPTCHA handling are unverified; uncertain sends must never retry automatically. No employer application has been submitted. Native Windows/Linux validation remains pending.
+Groq defaults to `openai/gpt-oss-120b`. An explicitly eligible model request-rate limit can permit one `openai/gpt-oss-20b` attempt; token/shared/unclear quotas require waiting. Both use the existing Free-plan key and identical verification. No paid or external-provider fallback exists. Free quota may interrupt generation; reported cooldowns persist across restart.
+
+Employer preparation/submission and CAPTCHA handling remain unverified and unimplemented in the website. Missing answers require candidate input, each real submission needs approval for its exact payload, and uncertain sends must never retry automatically. No employer application has been submitted. Native Windows/Linux validation remains pending.
 
 ## Technical references
 

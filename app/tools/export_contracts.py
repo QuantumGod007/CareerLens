@@ -1,4 +1,4 @@
-"""Export only implemented API routes; future AI schemas are explicitly marked."""
+"""Export implemented routes and the evidence/AI contracts used by Resume Studio."""
 import json
 
 from pydantic.json_schema import models_json_schema
@@ -12,9 +12,13 @@ from app.tools.init_db import BOARD_ID
 def documents():
     _, ai = models_json_schema([(model, "validation") for model in (
         ProfileDraft, StructuredJD, TailoredContent, VerificationResult)],
-        title="CareerLens AI contracts", description="Defined future contracts, not implemented AI services.")
+        title="CareerLens AI contracts", description="Phase 4 evidence contracts with local extraction and verified Groq resume wording.")
     ai.update({"$schema": "https://json-schema.org/draft/2020-12/schema",
-               "x-implementation-status": "defined-only", "x-contract-version": "0.2.0"})
+               "x-implementation-status": "implemented", "x-contract-version": "0.4.0",
+               "x-services": {"ProfileDraft": "local deterministic extraction with validated source spans",
+                              "StructuredJD": "local reviewed skill vocabulary with JD evidence",
+                              "TailoredContent": "consent-gated Groq wording plus deterministic verification",
+                              "VerificationResult": "Groq semantic review and fail-closed publication checks"}})
     return {
         "openapi.json": create_app().openapi(), "ai_schemas.json": ai,
         "examples.json": {
@@ -36,4 +40,4 @@ if __name__ == "__main__":
     destination.mkdir(exist_ok=True)
     for name, value in documents().items():
         (destination / name).write_text(json.dumps(value, indent=2, sort_keys=True, ensure_ascii=False) + "\n")
-    print("Exported implemented OpenAPI, defined-only AI schemas and synthetic examples.")
+    print("Exported implemented OpenAPI, Phase 4 evidence/AI schemas and synthetic examples.")

@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="en"><head><meta charset="UTF-8"><title>Resume</title><style>
+@page { size: A4; margin: 17mm 18mm; }
+* { box-sizing: border-box; }
+body { margin: 0; color: #172132; font-family: Arial, Helvetica, sans-serif; font-size: 10.5pt; line-height: 1.48; }
+header { border-bottom: 1.3pt solid #263750; padding-bottom: 10pt; margin-bottom: 14pt; }
+h1 { font-size: 23pt; line-height: 1.2; margin: 0 0 7pt; font-weight: 700; }
+header p { margin: 3pt 0; font-size: 9.5pt; color: #354055; }
+h2 { margin: 15pt 0 7pt; font-size: 11pt; text-transform: uppercase; letter-spacing: .8pt; color: #263750; break-after: avoid; }
+p { margin: 0 0 6pt; overflow-wrap: anywhere; orphans: 3; widows: 3; }
+.entry { padding-left: 0; }
+</style></head><body>
+<header><h1>{{ name or 'Resume' }}</h1>{% for value in contacts %}<p>{{ value }}</p>{% endfor %}</header>
+{% for section in sections %}<section><h2>{{ section.label }}</h2>{% for text in section['items'] %}<p class="entry">{{ text }}</p>{% endfor %}</section>{% endfor %}
+</body></html>

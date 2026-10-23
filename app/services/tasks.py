@@ -15,6 +15,8 @@ from scripts.feasibility.test_job_source import check_job_url
 
 ACTIVE = {"QUEUED", "RUNNING", "WAITING"}
 SAFE_RETRY = {"SOURCE_TIMEOUT", "SOURCE_NETWORK_ERROR", "SOURCE_UNAVAILABLE", "SOURCE_RATE_LIMITED"}
+STUDIO_KINDS = {"resume_parse", "job_search", "jd_analysis", "resume_generate"}
+SAFE_KINDS = {"source_refresh", *STUDIO_KINDS}
 
 
 def enqueue_refresh(database, board_id, local_id, correlation_id, key, expected_revision):
@@ -91,7 +93,7 @@ class Queue:
     def recover(self, session):
         for task in session.scalars(select(Task).where(Task.status == "RUNNING",
                 or_(Task.lease_expires_at <= utcnow(), Task.lease_expires_at.is_(None)))):
-            if task.possible_send_at is not None or task.kind != "source_refresh":
+            if task.possible_send_at is not None or task.kind not in SAFE_KINDS:
                 if task.run_id:
                     run = session.get(PreparationRun, task.run_id)
                     if run and run.state == "SUBMITTING":
@@ -104,6 +106,10 @@ class Queue:
                 task.finished_at = utcnow()
             else:
                 task.status, task.current_step = "QUEUED", "RECOVERED"
+            if task.status == "FAILED":
+                if task.kind in STUDIO_KINDS:
+                    task.current_step = "PROCESSING_ERROR"
+                self.fail_resource(session, task, task.error_code)
             task.lease_owner, task.lease_expires_at, task.updated_at = None, None, utcnow()
             append_event(session, "task", task.id, task.correlation_id, "LEASE_RECOVERY",
                          step=task.current_step, error_code=task.error_code, attempt=task.attempts)
@@ -117,7 +123,9 @@ class Queue:
                 (Task.status == "WAITING") & (Task.retry_at <= utcnow()))).order_by(Task.created_at, Task.id).limit(1))
             if task is None:
                 return None
-            task.status, task.current_step = "RUNNING", "FETCHING_SOURCE"
+            task.status = "RUNNING"
+            task.current_step = {"source_refresh":"FETCHING_SOURCE", "resume_parse":"READING_PDF",
+                "job_search":"SEARCHING_STORED_JOBS", "jd_analysis":"ANALYSING_JD", "resume_generate":"CHECKING_CONFIRMED_INPUTS"}.get(task.kind,"UNSUPPORTED_TASK")
             task.attempts += 1
             task.progress = 10
             task.lease_owner, task.lease_expires_at = self.owner, self.deadline()
@@ -203,11 +211,43 @@ class Queue:
             else:
                 task.status, task.finished_at = "FAILED", utcnow()
             task.error_code = code
-            task.current_step = "SOURCE_ERROR"
+            task.current_step = "SOURCE_ERROR" if task.kind == "source_refresh" else "PROCESSING_ERROR"
             task.updated_at = utcnow()
             task.lease_owner, task.lease_expires_at = None, None
             board = session.get(SourceBoard, task.entity_id) if safe else None
             if board:
                 board.last_error_code = code
+            if task.status == "FAILED":
+                self.fail_resource(session, task, code)
             append_event(session, "task", task.id, task.correlation_id, task.status,
                          error_code=code, attempt=task.attempts)
+
+    @staticmethod
+    def fail_resource(session, task, code):
+        from app.persistence.models import ResumeUpload, Search, ResumeGeneration
+        model = {"resume_parse": ResumeUpload, "job_search": Search,
+                 "resume_generate": ResumeGeneration}.get(task.kind)
+        resource = session.get(model, task.entity_id) if model else None
+        if resource:
+            blocked = task.kind == "resume_generate" and code in {"VERIFICATION_FAILED", "VERIFIER_RESPONSE_INVALID"}
+            resource.state = "BLOCKED" if blocked else "FAILED"
+            if hasattr(resource, "error_code"):
+                resource.error_code = code
+
+    def progress(self, task_id, step, progress):
+        with self.db.write() as session:
+            task = self.owned(session, task_id)
+            task.current_step, task.progress, task.updated_at = step, progress, utcnow()
+            append_event(session, "task", task.id, task.correlation_id, "PROGRESS", step=step, attempt=task.attempts)
+
+    def complete_studio(self, task_id, result, publish):
+        with self.db.write() as session:
+            task = self.owned(session, task_id)
+            if task.kind not in STUDIO_KINDS:
+                raise DomainError("HANDLER_NOT_ALLOWED", "This is not a Resume Studio task.")
+            publish(session, task)
+            task.result_json = result
+            task.status, task.current_step, task.progress = "SUCCEEDED", "PERSISTED_RESULT", 100
+            task.error_code, task.lease_owner, task.lease_expires_at = None, None, None
+            task.updated_at, task.finished_at = utcnow(), utcnow()
+            append_event(session,"task",task.id,task.correlation_id,"SUCCEEDED",attempt=task.attempts)

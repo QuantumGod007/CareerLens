@@ -1,6 +1,7 @@
 import {request, explanation, uuid, terminal} from './api.js';
 import {$, node, words} from './dom.js';
 import {renderHealth, renderSource, renderJobs, updateFilterOptions, showJob, renderTasks} from './views.js';
+import {createStudio} from './studio.js';
 
 const state = {
   connected: false, connecting: false, health: null, boards: [], boardId: null,
@@ -13,6 +14,7 @@ let healthTimer;
 let retryAction;
 let dialogTrigger;
 let sessionEpoch = 0;
+const studio = createStudio({connected:()=>state.connected,notify:notice,error:fail,follow:followTask});
 
 function notice(message, action, error = false, success = false) {
   $('notice').hidden = !message;
@@ -28,6 +30,7 @@ function fail(error, retry) {
   if (error.status === 401) {
     state.connected = false;
     sessionEpoch++;
+    studio.reset();
     stopPolling();
     connection();
   }
@@ -98,6 +101,7 @@ async function connect() {
     notice(null);
     const results = await Promise.allSettled([health(), loadSources()]);
     for (const result of results) if (result.status === 'rejected') fail(result.reason, connect);
+    if (state.connected) await studio.load();
     scheduleHealth();
   } catch (error) {
     state.connected = false;
@@ -115,6 +119,7 @@ async function disconnect() {
     state.connected = false;
     sessionEpoch++;
     jobsController?.abort();
+    studio.reset();
     stopPolling();
     clearTimeout(healthTimer);
     state.jobs = [];
@@ -232,7 +237,10 @@ async function readTask(id) {
   catch (error) { state.events.delete(id); fail(error, () => followTask(id)); }
   renderTasks(state, selectTask);
   updateActions();
-  if (terminal(task) && (!previous || !terminal(previous))) {
+  const newlyTerminal = terminal(task) && (!previous || !terminal(previous));
+  if (task.kind !== 'source_refresh') {
+    await studio.taskChanged(task,newlyTerminal);
+  } else if (newlyTerminal) {
     if (task.status === 'SUCCEEDED') {
       notice(`Refresh complete. ${task.result.listing_count} listings stored${task.result.data_origin === 'fixture' ? ' from controlled fixture data' : ' from the live source'}.`, undefined, false, true);
       try { await loadSources(); } catch (error) { fail(error, loadSources); }
@@ -286,13 +294,13 @@ function openJob(job, source) {
 }
 
 function navigate(focus = false) {
-  const name = ['overview', 'explore', 'activity'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
-  for (const view of ['overview', 'explore', 'activity']) $(view).hidden = view !== name;
+  const name = ['overview', 'explore', 'activity', 'studio'].includes(location.hash.slice(1)) ? location.hash.slice(1) : 'overview';
+  for (const view of ['overview', 'explore', 'activity', 'studio']) $(view).hidden = view !== name;
   for (const link of document.querySelectorAll('[data-view]')) {
     if (link.dataset.view === name) link.setAttribute('aria-current', 'page');
     else link.removeAttribute('aria-current');
   }
-  $('breadcrumb').textContent = {overview: 'Overview', explore: 'Explore jobs', activity: 'Activity'}[name];
+  $('breadcrumb').textContent = {overview: 'Overview', explore: 'Explore jobs', activity: 'Activity', studio: 'Resume Studio'}[name];
   document.title = `${$('breadcrumb').textContent} · CareerLens`;
   if (focus) $(`${name}-title`).focus();
 }

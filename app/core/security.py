@@ -22,6 +22,10 @@ session_clock = time.monotonic
 def browser_boundary(request: Request, *, mutation: bool = False) -> str:
     """Cookies are site scoped; explicitly enforce the origin (including port) too."""
     origin = str(request.base_url).rstrip("/")
+    content_type = request.headers.get("content-type", "").split(";")[0]
+    allowed_content = {"application/json"}
+    if request.method == "POST" and request.url.path == "/api/v1/profiles":
+        allowed_content = {"multipart/form-data"}
     try:
         loopback = request.client and ipaddress.ip_address(request.client.host).is_loopback
     except ValueError:
@@ -32,7 +36,7 @@ def browser_boundary(request: Request, *, mutation: bool = False) -> str:
             or request.headers.get("origin", origin) != origin
             or (mutation and (request.headers.get("origin") != origin
                 or request.headers.get("X-CareerLens-Local") != "1"
-                or request.headers.get("content-type", "").split(";")[0] != "application/json"))):
+                or content_type not in allowed_content))):
         raise DomainError("BROWSER_ORIGIN_REQUIRED", "Open CareerLens directly on its local address and reconnect.", 403)
     return origin
 

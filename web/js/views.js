@@ -105,14 +105,19 @@ export function showJob(job, source) {
   $('close-dialog').focus();
 }
 
+const taskLabels = {source_refresh:'Source refresh',resume_parse:'Resume extraction',job_search:'Job search',jd_analysis:'Job analysis',resume_generate:'Resume generation'};
 function taskContent(task) {
   const progress = node('progress', {class: 'task-progress', max: 100, value: task.progress, 'aria-label': 'Task progress'}, `${task.progress}%`);
-  return [node('div', {class: 'task-summary'}, node('strong', {}, 'Source refresh'), pill(words(task.status), taskKind(task))), progress,
+  return [node('div', {class: 'task-summary'}, node('strong', {}, taskLabels[task.kind]), pill(words(task.status), taskKind(task))), progress,
     node('p', {class: 'task-description'}, `${task.progress}% · ${words(task.current_step)} · Attempt ${task.attempts} of ${task.max_attempts}`),
     ...(task.retry_at && task.status === 'WAITING' ? [node('p', {class: 'inline-warning'}, `Waiting for retry at ${date(task.retry_at)}.`)] : []),
-    ...(task.status === 'FAILED' ? [node('p', {class: 'inline-warning'}, `Refresh failed: ${task.error_code || 'Unknown error'}. Earlier stored listings are kept. Check the source or development terminal before starting another refresh.`)] : []),
+    ...(task.status === 'FAILED' ? [node('p', {class: 'inline-warning'}, task.kind === 'source_refresh'
+      ? `Refresh failed: ${task.error_code || 'Unknown error'}. Earlier stored listings are kept. Check the source or development terminal before starting another refresh.`
+      : `Processing failed: ${task.error_code || 'Unknown error'}. No unverified result is published. Review Resume Studio or the development terminal.`)] : []),
     ...(task.status === 'CANCELLED' ? [node('p', {class: 'task-description'}, 'This task was cancelled. No successful refresh is reported.')] : []),
-    ...(task.result && task.status === 'SUCCEEDED' ? [node('p', {class: 'task-description'}, `${task.result.listing_count} listings stored · ${task.result.data_origin === 'live' ? 'Live source' : 'Controlled fixture data'}`)] : []),
+    ...(task.result && task.status === 'SUCCEEDED' ? [node('p', {class: 'task-description'}, task.kind === 'source_refresh'
+      ? `${task.result.listing_count} listings stored · ${task.result.data_origin === 'live' ? 'Live source' : 'Controlled fixture data'}`
+      : task.kind === 'job_search' ? `${task.result.result_count} results · ${words(task.result.state)}` : 'Saved result available in Resume Studio.')] : []),
   ];
 }
 
@@ -123,7 +128,7 @@ export function renderTasks(state, selectTask) {
   $('task-list').replaceChildren(...(tasks.length ? tasks.map(task => {
     const item = button('', () => selectTask(task.id), 'task-item');
     item.setAttribute('aria-pressed', String(task.id === state.selectedTask));
-    item.append(node('div', {class: 'task-summary'}, node('strong', {}, 'Source refresh'), pill(words(task.status), taskKind(task))),
+    item.append(node('div', {class: 'task-summary'}, node('strong', {}, taskLabels[task.kind]), pill(words(task.status), taskKind(task))),
       node('p', {}, `${date(task.created_at)} · ${task.progress}% · ${words(task.current_step)}`));
     return item;
   }) : [empty('No tasks followed yet', 'Start a refresh or look up a task above.')]));

@@ -11,7 +11,7 @@ from app.persistence.database import Database
 from app.persistence.models import Candidate, SourceBoard
 
 BOARD_ID = uuid5(NAMESPACE_URL, "careerlens:lever:drivetrain")
-HEAD = "0003_snapshots"
+HEAD = "0004_resume_studio"
 
 
 def migrate(settings: Settings, revision: str = "head") -> None:

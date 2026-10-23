@@ -379,6 +379,7 @@
           "items": {
             "$ref": "#/$defs/ChangeRecord"
           },
+          "maxItems": 8,
           "title": "Changes",
           "type": "array"
         },
@@ -386,6 +387,7 @@
           "items": {
             "$ref": "#/$defs/GeneratedClaim"
           },
+          "maxItems": 8,
           "title": "Claims",
           "type": "array"
         },
@@ -437,8 +439,14 @@
     }
   },
   "$schema": "https://json-schema.org/draft/2020-12/schema",
-  "description": "Defined future contracts, not implemented AI services.",
+  "description": "Phase 4 evidence contracts with local extraction and verified Groq resume wording.",
   "title": "CareerLens AI contracts",
-  "x-contract-version": "0.2.0",
-  "x-implementation-status": "defined-only"
+  "x-contract-version": "0.4.0",
+  "x-implementation-status": "implemented",
+  "x-services": {
+    "ProfileDraft": "local deterministic extraction with validated source spans",
+    "StructuredJD": "local reviewed skill vocabulary with JD evidence",
+    "TailoredContent": "consent-gated Groq wording plus deterministic verification",
+    "VerificationResult": "Groq semantic review and fail-closed publication checks"
+  }
 }

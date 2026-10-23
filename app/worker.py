@@ -1,4 +1,4 @@
-"""Single durable worker. Only public source refresh is executable in Phase 2."""
+"""Single durable worker for source refresh and private Resume Studio tasks."""
 from __future__ import annotations
 
 import argparse
@@ -20,8 +20,9 @@ from scripts.feasibility.common import ProbeError
 
 
 class Worker:
-    def __init__(self, database, fetcher=fetch_board):
+    def __init__(self, database, fetcher=fetch_board, provider=None):
         self.db, self.fetcher = database, fetcher
+        self.provider = provider
         self.queue = Queue(database, uuid4())
         self.stop_event = threading.Event()
         self.heartbeat_stop = threading.Event()
@@ -44,6 +45,10 @@ class Worker:
         self.task_id = task.id
         started = time.perf_counter()
         try:
+            from app.services.studio_worker import HANDLERS
+            if task.kind in HANDLERS:
+                HANDLERS[task.kind](self, task)
+                return True
             if task.kind != "source_refresh":
                 raise DomainError("HANDLER_NOT_ALLOWED", "No submission handler is enabled.")
             with self.db.read() as session:

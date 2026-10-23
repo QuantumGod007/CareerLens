@@ -37,7 +37,7 @@ def test_upgrade_previously_initialized_database(tmp_path):
     migrate(settings)
     with database.read() as session:
         assert session.get(Candidate, candidate_id) is not None
-        assert session.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0003_snapshots"
+        assert session.execute(text("SELECT version_num FROM alembic_version")).scalar() == "0004_resume_studio"
     database.close()
 
 

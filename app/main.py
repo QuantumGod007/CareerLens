@@ -10,10 +10,10 @@ from fastapi.staticfiles import StaticFiles
 from sqlalchemy import text
 
 from app import __version__
-from app.api import health, tasks, sources, artifacts, browser
+from app.api import health, tasks, sources, artifacts, browser, studio
 from app.core.config import ROOT, Settings, identity, load_settings
 from app.core.security import BrowserSessions
-from app.core.errors import envelope, handlers
+from app.core.errors import DomainError, envelope, handlers
 from app.core.logging import configure, record
 from app.persistence.database import Database
 from app.schemas.api import ErrorEnvelope
@@ -41,7 +41,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
             database.close()
 
     app = FastAPI(title="CareerLens local workspace", version=__version__, lifespan=lifespan,
-        description="Local web interface, persisted source refresh, task polling and private artifacts. No employer submission API.",
+        description="Local job discovery, confirmed profiles, evidence-based matching and verified private resume PDFs. No employer submission API.",
         responses={code: {"model": ErrorEnvelope} for code in (400, 401, 403, 404, 409, 422, 500, 503)})
     app.state.settings = settings
     handlers(app)
@@ -67,11 +67,26 @@ def create_app(settings: Settings | None = None) -> FastAPI:
         if code:
             response = JSONResponse(envelope(code, "Local request boundary rejected the request.", correlation_id), status_code=403)
         elif request.method == "OPTIONS":
-            response = JSONResponse({}, headers={"Access-Control-Allow-Methods": "GET, POST, OPTIONS",
-                "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-CareerLens-Token, X-Correlation-ID"})
+            response = JSONResponse({}, headers={"Access-Control-Allow-Methods": "GET, POST, PATCH, OPTIONS",
+                "Access-Control-Allow-Headers": "Content-Type, Idempotency-Key, X-CareerLens-Token, X-Correlation-ID, X-CareerLens-Local"})
         else:
             try:
+                # Bound the actual upload stream before the multipart parser can spool it.
+                if request.method == "POST" and request.url.path == "/api/v1/profiles":
+                    maximum = 5 * 1024 * 1024 + 65536
+                    content_length = request.headers.get("content-length")
+                    if content_length and (not content_length.isdigit() or int(content_length) > maximum):
+                        raise DomainError("PDF_TOO_LARGE", "Upload exceeds 5 MiB plus multipart overhead.", 413)
+                    chunks, total = [], 0
+                    async for chunk in request.stream():
+                        total += len(chunk)
+                        if total > maximum:
+                            raise DomainError("PDF_TOO_LARGE", "Upload exceeds the size limit.", 413)
+                        chunks.append(chunk)
+                    request._body = b"".join(chunks)
                 response = await call_next(request)
+            except DomainError as error:
+                response = JSONResponse(envelope(error.code,error.message,correlation_id),status_code=error.status)
             except Exception:
                 # Do not log exception text, request values or SDK/SQL parameter dumps.
                 record("request_error", correlation_id=correlation_id, error_code="INTERNAL_ERROR")
@@ -94,7 +109,7 @@ def create_app(settings: Settings | None = None) -> FastAPI:
                duration_ms=round((time.perf_counter() - started) * 1000))
         return response
 
-    for module in (health, sources, tasks, artifacts, browser):
+    for module in (health, sources, tasks, artifacts, browser, studio):
         app.include_router(module.router)
 
     @app.get("/", include_in_schema=False)
